@@ -1,6 +1,8 @@
 from typing import Optional
 
+
 from ares import AresBot
+from sc2.position import Point2
 
 
 class MyBot(AresBot):
