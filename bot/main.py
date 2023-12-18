@@ -2,10 +2,13 @@ from typing import Optional
 
 
 from ares import AresBot
+from ares.constants import  ALL_STRUCTURES
 from sc2.position import Point2
+from sc2.Units import Units
 
 
 class MyBot(AresBot):
+    combat_manager = None
     def __init__(self, game_step_override: Optional[int] = None):
         """Initiate custom bot
 
