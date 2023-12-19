@@ -8,7 +8,7 @@ from ares.behaviors.combat.individual import (
 )
 
 from sc2.ids.unit_typeid import UnitTypeId
-from sc2.unit import Unit
+from sc2.unit import Units
 import numpy as np
 
 
@@ -26,41 +26,72 @@ class MyBot(AresBot):
         super().__init__(game_step_override)
 
     async def on_step(self, iteration: int) -> None:
-        await super(MyBot, self).on_step(iteration)
+        # retrieves zerlings and roaches
+        zerling: Units = self.units(UnitTypeId.ZERGLING)
+        roaches: Units = self.units(UnitTypeId.ROACH)
 
-        # step logic here ...
-        pass
+        # define targets and grids
+        enemy_units: Units = self.enemy_units
+        ground_grid: np.ndarray = self.mediator.get_ground_grid
 
-    """
-    Can use `python-sc2` hooks as usual, but make a call the inherited method in the superclass
-    Examples:
-    """
-    # async def on_start(self) -> None:
-    #     await super(MyBot, self).on_start()
-    #
-    #     # on_start logic here ...
-    #
-    # async def on_end(self, game_result: Result) -> None:
-    #     await super(MyBot, self).on_end(game_result)
-    #
-    #     # custom on_end logic here ...
-    #
-    # async def on_building_construction_complete(self, unit: Unit) -> None:
-    #     await super(MyBot, self).on_building_construction_complete(unit)
-    #
-    #     # custom on_building_construction_complete logic here ...
-    #
-    # async def on_unit_created(self, unit: Unit) -> None:
-    #     await super(MyBot, self).on_unit_created(unit)
-    #
-    #     # custom on_unit_created logic here ...
-    #
-    # async def on_unit_destroyed(self, unit_tag: int) -> None:
-    #     await super(MyBot, self).on_unit_destroyed(unit_tag)
-    #
-    #     # custom on_unit_destroyed logic here ...
-    #
-    # async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float) -> None:
-    #     await super(MyBot, self).on_unit_took_damage(unit, amount_damage_taken)
-    #
-    #     # custom on_unit_took_damage logic here ...
+        # execute manuevers
+        self.do_zerling_engagement(zerling, enemy_units, ground_grid)
+        self.do_roach_pylon_attack(roaches, ground_grid)
+
+        def do_zerling_engagement (
+            self,
+            zerlings: Units,
+            enemies: Units,
+            grid: np.ndarray,
+        ) -> None:
+            """Engage enemy units with zerlings
+
+            Parameters
+            ----------
+            units :
+                Zerlings to engage with
+            enemies :
+                Enemy units to engage
+            grid :
+                Grid of the ground
+            """
+            zerling_maneuver = CombatManuever = CombatManuever()
+            # engage enemy and retreat if needed
+            zergling_maneuver.add(EngageEnemy(units=zerlings, targets=enemies))
+            zergling_maneuver.add(Retreat(units=zerlings, grid=grid))
+            self.register_behavior(zergling_maneuver)
+
+            def do_roach_pylon_attack(
+                    self,
+                    roaches: Units,
+                    grid: np.ndarray,
+                    
+            ) -> None:
+                """Attack enemy pylons with roaches
+
+                Parameters
+                ----------
+                units :
+                    Roaches to attack with
+                grid :
+                    Grid of the ground
+                """
+                roach_maneuver = CombatManuever= CombatManuever()
+                # attack enemy pylons and retreat if needed
+                roach_maneuver.add(
+                    PathUnitToTarget(
+                        units=roaches,
+                        grid=grid,
+                        target=self.enemy_structures(UnitTypeId.PYLON).first.position
+                    )
+                )
+
+                self.register_behavior(roach_maneuver)
+                
+                
+
+
+        
+        
+
+     
