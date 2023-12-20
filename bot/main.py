@@ -1,4 +1,7 @@
 from typing import Optional
+from ares.consts import ALL_STRUCTURES
+
+
 from ares import AresBot
 from ares.behaviors.combat_manager import CombatManuever
 from ares.behaviors.combat.individual import (
