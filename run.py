@@ -8,6 +8,7 @@ from sc2 import maps
 from sc2.data import AIBuild, Difficulty, Race
 from sc2.main import run_game
 from sc2.player import Bot, Computer
+from sc2.bot_ai import BotAI
 
 sys.path.append("ares-sc2/src/ares")
 sys.path.append("ares-sc2/src")
@@ -25,6 +26,7 @@ CONFIG_FILE: str = "config.yml"
 MAP_FILE_EXT: str = "SC2Map"
 MY_BOT_NAME: str = "MyBotName"
 MY_BOT_RACE: str = "MyBotRace"
+
 
 class DummyBot(BotAI):
     def __init__(self):
@@ -66,10 +68,10 @@ def main():
     else:
         # Local game
         map_list: List[str] = [
-            "PlateauMicro_1"
+            "PlateauMicro_2"
             # "BotMicroArena_6",
         ]
-        
+
         # alternative example code if finding the map path is problematic
         # map_list: List[str] = [
         #     "BerlingradAIE",

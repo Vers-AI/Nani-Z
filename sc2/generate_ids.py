@@ -17,8 +17,12 @@ except ImportError:
 
 
 class IdGenerator:
-
-    def __init__(self, game_data: GameData = None, game_version: str = None, verbose: bool = False):
+    def __init__(
+        self,
+        game_data: GameData = None,
+        game_version: str = None,
+        verbose: bool = False,
+    ):
         self.game_data: GameData = game_data
         self.game_version = game_version
         self.verbose = verbose
@@ -29,7 +33,8 @@ class IdGenerator:
 
         self.HOME_DIR = str(Path.home())
         self.DATA_JSON = {
-            "Darwin": self.HOME_DIR + "/Library/Application Support/Blizzard/StarCraft II/stableid.json",
+            "Darwin": self.HOME_DIR
+            + "/Library/Application Support/Blizzard/StarCraft II/stableid.json",
             "Windows": self.HOME_DIR + "/Documents/StarCraft II/stableid.json",
             "Linux": self.HOME_DIR + "/Documents/StarCraft II/stableid.json",
         }
@@ -92,7 +97,9 @@ class IdGenerator:
                 key = "_" + key
 
             if key in abilities and v["index"] == 0:
-                logger.info(f"{key} has value 0 and id {v['id']}, overwriting {key}: {abilities[key]}")
+                logger.info(
+                    f"{key} has value 0 and id {v['id']}, overwriting {key}: {abilities[key]}"
+                )
                 # Commented out to try to fix: 3670 is not a valid AbilityId
                 abilities[key] = v["id"]
             elif key in abilities:
@@ -138,7 +145,9 @@ class IdGenerator:
         idsdir.mkdir(exist_ok=True)
 
         with (idsdir / "__init__.py").open("w") as f:
-            initstring = f"__all__ = {[n.lower() for n in self.FILE_TRANSLATE.values()] !r}\n".replace("'", '"')
+            initstring = f"__all__ = {[n.lower() for n in self.FILE_TRANSLATE.values()] !r}\n".replace(
+                "'", '"'
+            )
             f.write("\n".join([self.HEADER, initstring]))
 
         for name, body in enums.items():
@@ -153,7 +162,9 @@ class IdGenerator:
             code += f"""
     def __repr__(self) -> str:
         return f"{class_name}.{{self.name}}"
-""".split("\n")
+""".split(
+                "\n"
+            )
 
             # Add missing ids function to not make the game crash when unknown BuffId was detected
             if class_name == "BuffId":
@@ -161,19 +172,25 @@ class IdGenerator:
     @classmethod
     def _missing_(cls, value: int) -> {class_name}:
         return cls.NULL
-""".split("\n")
+""".split(
+                    "\n"
+                )
 
             if class_name == "AbilityId":
                 code += f"""
     @classmethod
     def _missing_(cls, value: int) -> {class_name}:
         return cls.NULL_NULL
-""".split("\n")
+""".split(
+                    "\n"
+                )
 
             code += f"""
 for item in {class_name}:
     globals()[item.name] = item
-""".split("\n")
+""".split(
+                "\n"
+            )
 
             ids_file_path = (idsdir / self.FILE_TRANSLATE[name]).with_suffix(".py")
             with ids_file_path.open("w") as f:
@@ -185,13 +202,23 @@ for item in {class_name}:
                 f.write(f'ID_VERSION_STRING = "{self.game_version}"\n')
 
     def update_ids_from_stableid_json(self):
-        if self.game_version is None or ID_VERSION_STRING is None or ID_VERSION_STRING != self.game_version:
-            if self.verbose and self.game_version is not None and ID_VERSION_STRING is not None:
+        if (
+            self.game_version is None
+            or ID_VERSION_STRING is None
+            or ID_VERSION_STRING != self.game_version
+        ):
+            if (
+                self.verbose
+                and self.game_version is not None
+                and ID_VERSION_STRING is not None
+            ):
                 logger.info(
                     f"Game version is different (Old: {self.game_version}, new: {ID_VERSION_STRING}. Updating ids to match game version"
                 )
             stable_id_path = Path(self.DATA_JSON[self.PF])
-            assert stable_id_path.is_file(), f"stable_id.json was not found at path \"{stable_id_path}\""
+            assert (
+                stable_id_path.is_file()
+            ), f'stable_id.json was not found at path "{stable_id_path}"'
             with stable_id_path.open(encoding="utf-8") as data_file:
                 data = json.loads(data_file.read())
             self.generate_python_code(self.parse_data(data))
@@ -203,7 +230,6 @@ for item in {class_name}:
 
     @staticmethod
     def reimport_ids():
-
         # Reload the newly written "id" files
         # TODO This only re-imports modules, but if they haven't been imported, it will yield an error
         importlib.reload(sys.modules["sc2.ids.ability_id"])
@@ -226,16 +252,21 @@ for item in {class_name}:
         ids = set(a.value for a in AbilityId if a.value != 0)
         self.game_data.abilities = {
             a.ability_id: AbilityData(self.game_data, a)
-            for a in self.game_data._proto.abilities if a.ability_id in ids
+            for a in self.game_data._proto.abilities
+            if a.ability_id in ids
         }
         # self.game_data.abilities = {
         #     a.ability_id: AbilityData(self.game_data, a) for a in self.game_data._proto.abilities
         # }
         self.game_data.units = {
             u.unit_id: UnitTypeData(self.game_data, u)
-            for u in self.game_data._proto.units if u.available
+            for u in self.game_data._proto.units
+            if u.available
         }
-        self.game_data.upgrades = {u.upgrade_id: UpgradeData(self.game_data, u) for u in self.game_data._proto.upgrades}
+        self.game_data.upgrades = {
+            u.upgrade_id: UpgradeData(self.game_data, u)
+            for u in self.game_data._proto.upgrades
+        }
 
 
 if __name__ == "__main__":

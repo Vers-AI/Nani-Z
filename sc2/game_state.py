@@ -25,7 +25,6 @@ except ImportError:
 
 
 class Blip:
-
     def __init__(self, proto):
         """
         :param proto:
@@ -92,7 +91,6 @@ class Common:
 
 
 class EffectData:
-
     def __init__(self, proto, fake=False):
         """
         :param proto:
@@ -120,12 +118,12 @@ class EffectData:
 
     @property
     def is_mine(self) -> bool:
-        """ Checks if the effect is caused by me. """
+        """Checks if the effect is caused by me."""
         return self._proto.alliance == IS_MINE
 
     @property
     def is_enemy(self) -> bool:
-        """ Checks if the effect is hostile. """
+        """Checks if the effect is hostile."""
         return self._proto.alliance == IS_ENEMY
 
     @property
@@ -150,7 +148,6 @@ class ChatMessage:
 
 @dataclass
 class AbilityLookupTemplateClass:
-
     @property
     def exact_id(self) -> AbilityId:
         return AbilityId(self.ability_id)
@@ -194,7 +191,6 @@ class ActionError(AbilityLookupTemplateClass):
 
 
 class GameState:
-
     def __init__(self, response_observation, previous_observation=None):
         """
         :param response_observation:
@@ -211,22 +207,30 @@ class GameState:
         self.common: Common = Common(self.observation.player_common)
 
         # Area covered by Pylons and Warpprisms
-        self.psionic_matrix: PsionicMatrix = PsionicMatrix.from_proto(self.observation_raw.player.power_sources)
+        self.psionic_matrix: PsionicMatrix = PsionicMatrix.from_proto(
+            self.observation_raw.player.power_sources
+        )
         # 22.4 per second on faster game speed
         self.game_loop: int = self.observation.game_loop
 
         # https://github.com/Blizzard/s2client-proto/blob/33f0ecf615aa06ca845ffe4739ef3133f37265a9/s2clientprotocol/score.proto#L31
         self.score: ScoreDetails = ScoreDetails(self.observation.score)
         self.abilities = self.observation.abilities  # abilities of selected units
-        self.upgrades: Set[UpgradeId] = {UpgradeId(upgrade) for upgrade in self.observation_raw.player.upgrade_ids}
+        self.upgrades: Set[UpgradeId] = {
+            UpgradeId(upgrade) for upgrade in self.observation_raw.player.upgrade_ids
+        }
 
         # self.visibility[point]: 0=Hidden, 1=Fogged, 2=Visible
         self.visibility: PixelMap = PixelMap(self.observation_raw.map_state.visibility)
         # self.creep[point]: 0=No creep, 1=creep
-        self.creep: PixelMap = PixelMap(self.observation_raw.map_state.creep, in_bits=True)
+        self.creep: PixelMap = PixelMap(
+            self.observation_raw.map_state.creep, in_bits=True
+        )
 
         # Effects like ravager bile shot, lurker attack, everything in effect_id.py
-        self.effects: Set[EffectData] = {EffectData(effect) for effect in self.observation_raw.effects}
+        self.effects: Set[EffectData] = {
+            EffectData(effect) for effect in self.observation_raw.effects
+        }
         """ Usage:
         for effect in self.state.effects:
             if effect.id == EffectId.RAVAGERCORROSIVEBILECP:
@@ -236,16 +240,20 @@ class GameState:
 
     @cached_property
     def dead_units(self) -> Set[int]:
-        """ A set of unit tags that died this frame """
+        """A set of unit tags that died this frame"""
         _dead_units = set(self.observation_raw.event.dead_units)
         if self.previous_observation:
-            return _dead_units | set(self.previous_observation.observation.raw_data.event.dead_units)
+            return _dead_units | set(
+                self.previous_observation.observation.raw_data.event.dead_units
+            )
         return _dead_units
 
     @cached_property
     def chat(self) -> List[ChatMessage]:
         """List of chat messages sent this frame (by either player)."""
-        previous_frame_chat = self.previous_observation.chat if self.previous_observation else []
+        previous_frame_chat = (
+            self.previous_observation.chat if self.previous_observation else []
+        )
         return [
             ChatMessage(message.player_id, message.message)
             for message in chain(previous_frame_chat, self.response_observation.chat)
@@ -257,18 +265,29 @@ class GameState:
         Game alerts, see https://github.com/Blizzard/s2client-proto/blob/01ab351e21c786648e4c6693d4aad023a176d45c/s2clientprotocol/sc2api.proto#L683-L706
         """
         if self.previous_observation:
-            return list(chain(self.previous_observation.observation.alerts, self.observation.alerts))
+            return list(
+                chain(
+                    self.previous_observation.observation.alerts,
+                    self.observation.alerts,
+                )
+            )
         return self.observation.alerts
 
     @cached_property
-    def actions(self) -> List[Union[ActionRawUnitCommand, ActionRawToggleAutocast, ActionRawCameraMove]]:
+    def actions(
+        self,
+    ) -> List[
+        Union[ActionRawUnitCommand, ActionRawToggleAutocast, ActionRawCameraMove]
+    ]:
         """
         List of successful actions since last frame.
         See https://github.com/Blizzard/s2client-proto/blob/01ab351e21c786648e4c6693d4aad023a176d45c/s2clientprotocol/sc2api.proto#L630-L637
 
         Each action is converted into Python dataclasses: ActionRawUnitCommand, ActionRawToggleAutocast, ActionRawCameraMove
         """
-        previous_frame_actions = self.previous_observation.actions if self.previous_observation else []
+        previous_frame_actions = (
+            self.previous_observation.actions if self.previous_observation else []
+        )
         actions = []
         for action in chain(previous_frame_actions, self.response_observation.actions):
             action_raw = action.action_raw
@@ -311,7 +330,13 @@ class GameState:
                 )
             else:
                 # Camera move actions
-                actions.append(ActionRawCameraMove(Point2.from_proto(action.action_raw.camera_move.center_world_space)))
+                actions.append(
+                    ActionRawCameraMove(
+                        Point2.from_proto(
+                            action.action_raw.camera_move.center_world_space
+                        )
+                    )
+                )
         return actions
 
     @cached_property
@@ -320,7 +345,11 @@ class GameState:
         List of successful unit actions since last frame.
         See https://github.com/Blizzard/s2client-proto/blob/01ab351e21c786648e4c6693d4aad023a176d45c/s2clientprotocol/raw.proto#L185-L193
         """
-        return list(filter(lambda action: isinstance(action, ActionRawUnitCommand), self.actions))
+        return list(
+            filter(
+                lambda action: isinstance(action, ActionRawUnitCommand), self.actions
+            )
+        )
 
     @cached_property
     def actions_toggle_autocast(self) -> List[ActionRawToggleAutocast]:
@@ -328,7 +357,11 @@ class GameState:
         List of successful autocast toggle actions since last frame.
         See https://github.com/Blizzard/s2client-proto/blob/01ab351e21c786648e4c6693d4aad023a176d45c/s2clientprotocol/raw.proto#L199-L202
         """
-        return list(filter(lambda action: isinstance(action, ActionRawToggleAutocast), self.actions))
+        return list(
+            filter(
+                lambda action: isinstance(action, ActionRawToggleAutocast), self.actions
+            )
+        )
 
     @cached_property
     def action_errors(self) -> List[ActionError]:
@@ -336,8 +369,12 @@ class GameState:
         List of erroneous actions since last frame.
         See https://github.com/Blizzard/s2client-proto/blob/01ab351e21c786648e4c6693d4aad023a176d45c/s2clientprotocol/sc2api.proto#L648-L652
         """
-        previous_frame_errors = self.previous_observation.action_errors if self.previous_observation else []
+        previous_frame_errors = (
+            self.previous_observation.action_errors if self.previous_observation else []
+        )
         return [
             ActionError(error.ability_id, error.unit_tag, error.result)
-            for error in chain(self.response_observation.action_errors, previous_frame_errors)
+            for error in chain(
+                self.response_observation.action_errors, previous_frame_errors
+            )
         ]

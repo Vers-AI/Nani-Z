@@ -12,17 +12,24 @@ from loguru import logger
 
 def win_path_to_wsl_path(path):
     """Convert a path like C:\\foo to /mnt/c/foo"""
-    return Path("/mnt") / PureWindowsPath(re.sub("^([A-Z]):", lambda m: m.group(1).lower(), path))
+    return Path("/mnt") / PureWindowsPath(
+        re.sub("^([A-Z]):", lambda m: m.group(1).lower(), path)
+    )
 
 
 def wsl_path_to_win_path(path):
     """Convert a path like /mnt/c/foo to C:\\foo"""
-    return PureWindowsPath(re.sub("^/mnt/([a-z])", lambda m: m.group(1).upper() + ":", path))
+    return PureWindowsPath(
+        re.sub("^/mnt/([a-z])", lambda m: m.group(1).upper() + ":", path)
+    )
 
 
 def get_wsl_home():
     """Get home directory of from Windows, even if run in WSL"""
-    proc = subprocess.run(["powershell.exe", "-Command", "Write-Host -NoNewLine $HOME"], capture_output=True)
+    proc = subprocess.run(
+        ["powershell.exe", "-Command", "Write-Host -NoNewLine $HOME"],
+        capture_output=True,
+    )
 
     if proc.returncode != 0:
         return None
@@ -80,7 +87,9 @@ def detect():
         return None
 
     try:
-        wsl_proc = subprocess.run(["wsl.exe", "--list", "--running", "--verbose"], capture_output=True)
+        wsl_proc = subprocess.run(
+            ["wsl.exe", "--list", "--running", "--verbose"], capture_output=True
+        )
     except (OSError, ValueError):
         return None
     if wsl_proc.returncode != 0:
@@ -109,9 +118,17 @@ def detect():
 
     logger.info(f"WSL version {version} detected")
 
-    if version == "2" and not (os.environ.get("SC2CLIENTHOST") and os.environ.get("SC2SERVERHOST")):
-        logger.warning("You appear to be running WSL2 without your hosts configured correctly.")
-        logger.warning("This may result in SC2 staying on a black screen and not connecting to your bot.")
-        logger.warning("Please see the python-sc2 README for WSL2 configuration instructions.")
+    if version == "2" and not (
+        os.environ.get("SC2CLIENTHOST") and os.environ.get("SC2SERVERHOST")
+    ):
+        logger.warning(
+            "You appear to be running WSL2 without your hosts configured correctly."
+        )
+        logger.warning(
+            "This may result in SC2 staying on a black screen and not connecting to your bot."
+        )
+        logger.warning(
+            "Please see the python-sc2 README for WSL2 configuration instructions."
+        )
 
     return "WSL" + version

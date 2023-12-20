@@ -267,5 +267,5 @@ GENERIC_REDIRECT_ABILITIES: Dict[AbilityId, AbilityId] = {
     AbilityId.UPGRADETOWARPGATE_CANCEL: AbilityId.CANCEL,
     AbilityId.WARPABLE_CANCEL: AbilityId.CANCEL,
     AbilityId.WIDOWMINEBURROW_CANCEL: AbilityId.CANCEL,
-    AbilityId.ZERGBUILD_CANCEL: AbilityId.HALT
+    AbilityId.ZERGBUILD_CANCEL: AbilityId.HALT,
 }

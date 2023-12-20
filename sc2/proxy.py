@@ -49,11 +49,15 @@ class Proxy:
             request = sc_pb.Request(leave_game=sc_pb.RequestLeaveGame())
         if request.HasField("leave_game"):
             if self.controller._status == Status.in_game:
-                logger.info(f"Proxy: player {self.player.name}({self.player_id}) surrenders")
+                logger.info(
+                    f"Proxy: player {self.player.name}({self.player_id}) surrenders"
+                )
                 self.result = {self.player_id: Result.Defeat}
             elif self.controller._status == Status.ended:
                 await self.get_response()
-        elif request.HasField("join_game") and not request.join_game.HasField("player_name"):
+        elif request.HasField("join_game") and not request.join_game.HasField(
+            "player_name"
+        ):
             request.join_game.player_name = self.player.name
         await self.controller._ws.send_bytes(request.SerializeToString())
 
@@ -88,35 +92,54 @@ class Proxy:
         else:
             new_status = Status(response.status)
             if new_status != self.controller._status:
-                logger.info(f"Controller({self.player.name}): {self.controller._status}->{new_status}")
+                logger.info(
+                    f"Controller({self.player.name}): {self.controller._status}->{new_status}"
+                )
                 self.controller._status = new_status
 
         if self.player_id is None:
             if response.HasField("join_game"):
                 self.player_id = response.join_game.player_id
-                logger.info(f"Proxy({self.player.name}): got join_game for {self.player_id}")
+                logger.info(
+                    f"Proxy({self.player.name}): got join_game for {self.player_id}"
+                )
 
         if self.result is None:
             if response.HasField("observation"):
                 obs: sc_pb.ResponseObservation = response.observation
                 if obs.player_result:
-                    self.result = {pr.player_id: Result(pr.result) for pr in obs.player_result}
+                    self.result = {
+                        pr.player_id: Result(pr.result) for pr in obs.player_result
+                    }
                 elif (
-                    self.timeout_loop and obs.HasField("observation") and obs.observation.game_loop > self.timeout_loop
+                    self.timeout_loop
+                    and obs.HasField("observation")
+                    and obs.observation.game_loop > self.timeout_loop
                 ):
                     self.result = {i: Result.Tie for i in range(1, 3)}
                     logger.info(f"Proxy({self.player.name}) timing out")
-                    act = [sc_pb.Action(action_chat=sc_pb.ActionChat(message="Proxy: Timing out"))]
-                    await self.controller._execute(action=sc_pb.RequestAction(actions=act))
+                    act = [
+                        sc_pb.Action(
+                            action_chat=sc_pb.ActionChat(message="Proxy: Timing out")
+                        )
+                    ]
+                    await self.controller._execute(
+                        action=sc_pb.RequestAction(actions=act)
+                    )
         return response
 
     async def get_result(self):
         try:
             res = await self.controller.ping()
             if res.status in {Status.in_game, Status.in_replay, Status.ended}:
-                res = await self.controller._execute(observation=sc_pb.RequestObservation())
+                res = await self.controller._execute(
+                    observation=sc_pb.RequestObservation()
+                )
                 if res.HasField("observation") and res.observation.player_result:
-                    self.result = {pr.player_id: Result(pr.result) for pr in res.observation.player_result}
+                    self.result = {
+                        pr.player_id: Result(pr.result)
+                        for pr in res.observation.player_result
+                    }
         # pylint: disable=W0703
         # TODO Catching too general exception Exception (broad-except)
         except Exception as e:
@@ -130,7 +153,6 @@ class Proxy:
                 if msg.data is None:
                     raise TypeError(f"data is None, {msg}")
                 if msg.data and msg.type == WSMsgType.BINARY:
-
                     await self.parse_request(msg)
 
                     response_bytes = await self.get_response()
@@ -180,13 +202,19 @@ class Proxy:
         elif platform.system() == "Windows":
             subproc_args["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
 
-        player_command_line = self.player.cmd_line(self.port, startport, self.controller._process._host, self.realtime)
+        player_command_line = self.player.cmd_line(
+            self.port, startport, self.controller._process._host, self.realtime
+        )
         logger.info(f"Starting bot with command: {' '.join(player_command_line)}")
         if self.player.stdout is None:
-            bot_process = subprocess.Popen(player_command_line, stdout=subprocess.DEVNULL, **subproc_args)
+            bot_process = subprocess.Popen(
+                player_command_line, stdout=subprocess.DEVNULL, **subproc_args
+            )
         else:
             with open(self.player.stdout, "w+") as out:
-                bot_process = subprocess.Popen(player_command_line, stdout=out, **subproc_args)
+                bot_process = subprocess.Popen(
+                    player_command_line, stdout=out, **subproc_args
+                )
 
         while self.result is None:
             bot_alive = bot_process and bot_process.poll() is None
@@ -207,8 +235,12 @@ class Proxy:
         logger.info(f"({self.port}): cleaning up {self.player !r}")
         for _i in range(3):
             if isinstance(bot_process, subprocess.Popen):
-                if bot_process.stdout and not bot_process.stdout.closed:  # should not run anymore
-                    logger.info(f"==================output for player {self.player.name}")
+                if (
+                    bot_process.stdout and not bot_process.stdout.closed
+                ):  # should not run anymore
+                    logger.info(
+                        f"==================output for player {self.player.name}"
+                    )
                     for l in bot_process.stdout.readlines():
                         logger.opt(raw=True).info(l.decode("utf-8"))
                     bot_process.stdout.close()

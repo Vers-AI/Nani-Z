@@ -9,10 +9,9 @@ T = TypeVar("T")
 
 
 class CacheDict(dict):
-
     def retrieve_and_set(self, key: Hashable, func: Callable[[], T]) -> T:
-        """ Either return the value at a certain key,
-        or set the return value of a function to that key, then return that value. """
+        """Either return the value at a certain key,
+        or set the return value of a function to that key, then return that value."""
         if key not in self:
             self[key] = func()
         return self[key]
@@ -27,7 +26,7 @@ class property_cache_once_per_frame(property):
     This decorator compared to the above runs a little faster, however you should only use this decorator if you are sure that you do not modify the mutable once it is calculated and cached.
 
     Copied and modified from https://tedboy.github.io/flask/_modules/werkzeug/utils.html#cached_property
-    # """
+    #"""
 
     def __init__(self, func: Callable[[BotAI], T], name=None):
         # pylint: disable=W0231

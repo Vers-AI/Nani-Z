@@ -33,8 +33,12 @@ class Portconfig:
         if player_ports:
             self.players = player_ports
         else:
-            self.players = [[portpicker.pick_unused_port() for _ in range(2)] for _ in range(guests)]
-            self._picked_ports.extend(port for player in self.players for port in player)
+            self.players = [
+                [portpicker.pick_unused_port() for _ in range(2)] for _ in range(guests)
+            ]
+            self._picked_ports.extend(
+                port for player in self.players for port in player
+            )
 
     def clean(self):
         while self._picked_ports:
@@ -45,7 +49,9 @@ class Portconfig:
 
     @property
     def as_json(self):
-        return json.dumps({"shared": self.shared, "server": self.server, "players": self.players})
+        return json.dumps(
+            {"shared": self.shared, "server": self.server, "players": self.players}
+        )
 
     @classmethod
     def contiguous_ports(cls, guests=1, attempts=40):

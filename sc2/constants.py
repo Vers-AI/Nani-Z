@@ -174,10 +174,20 @@ IS_VISIBLE = DisplayType.Visible.value
 IS_PLACEHOLDER = DisplayType.Placeholder.value
 IS_MINE = Alliance.Self.value
 IS_ENEMY = Alliance.Enemy.value
-IS_CLOAKED: Set[int] = {CloakState.Cloaked.value, CloakState.CloakedDetected.value, CloakState.CloakedAllied.value}
+IS_CLOAKED: Set[int] = {
+    CloakState.Cloaked.value,
+    CloakState.CloakedDetected.value,
+    CloakState.CloakedAllied.value,
+}
 IS_REVEALED: int = CloakState.CloakedDetected.value
-CAN_BE_ATTACKED: Set[int] = {CloakState.NotCloaked.value, CloakState.CloakedDetected.value}
-IS_CARRYING_MINERALS: Set[BuffId] = {BuffId.CARRYMINERALFIELDMINERALS, BuffId.CARRYHIGHYIELDMINERALFIELDMINERALS}
+CAN_BE_ATTACKED: Set[int] = {
+    CloakState.NotCloaked.value,
+    CloakState.CloakedDetected.value,
+}
+IS_CARRYING_MINERALS: Set[BuffId] = {
+    BuffId.CARRYMINERALFIELDMINERALS,
+    BuffId.CARRYHIGHYIELDMINERALFIELDMINERALS,
+}
 IS_CARRYING_VESPENE: Set[BuffId] = {
     BuffId.CARRYHARVESTABLEVESPENEGEYSERGAS,
     BuffId.CARRYHARVESTABLEVESPENEGEYSERGASPROTOSS,
@@ -210,7 +220,11 @@ IS_CONSTRUCTING_SCV: Set[AbilityId] = {
     AbilityId.TERRANBUILD_STARPORT,
     AbilityId.TERRANBUILD_SUPPLYDEPOT,
 }
-IS_REPAIRING: Set[AbilityId] = {AbilityId.EFFECT_REPAIR, AbilityId.EFFECT_REPAIR_MULE, AbilityId.EFFECT_REPAIR_SCV}
+IS_REPAIRING: Set[AbilityId] = {
+    AbilityId.EFFECT_REPAIR,
+    AbilityId.EFFECT_REPAIR_MULE,
+    AbilityId.EFFECT_REPAIR_SCV,
+}
 IS_DETECTOR: Set[UnitTypeId] = {
     UnitTypeId.OBSERVER,
     UnitTypeId.OBSERVERSIEGEMODE,
@@ -494,185 +508,61 @@ DAMAGE_BONUS_PER_UPGRADE: Dict[UnitTypeId, Dict[TargetType, Any]] = {
     #
     # Protoss
     #
-    UnitTypeId.PROBE: {
-        TargetType.Ground.value: {
-            None: 0
-        }
-    },
+    UnitTypeId.PROBE: {TargetType.Ground.value: {None: 0}},
     # Gateway Units
-    UnitTypeId.ADEPT: {
-        TargetType.Ground.value: {
-            IS_LIGHT: 1
-        }
-    },
-    UnitTypeId.STALKER: {
-        TargetType.Any.value: {
-            IS_ARMORED: 1
-        }
-    },
-    UnitTypeId.DARKTEMPLAR: {
-        TargetType.Ground.value: {
-            None: 5
-        }
-    },
-    UnitTypeId.ARCHON: {
-        TargetType.Any.value: {
-            None: 3,
-            IS_BIOLOGICAL: 1
-        }
-    },
+    UnitTypeId.ADEPT: {TargetType.Ground.value: {IS_LIGHT: 1}},
+    UnitTypeId.STALKER: {TargetType.Any.value: {IS_ARMORED: 1}},
+    UnitTypeId.DARKTEMPLAR: {TargetType.Ground.value: {None: 5}},
+    UnitTypeId.ARCHON: {TargetType.Any.value: {None: 3, IS_BIOLOGICAL: 1}},
     # Robo Units
-    UnitTypeId.IMMORTAL: {
-        TargetType.Ground.value: {
-            None: 2,
-            IS_ARMORED: 3
-        }
-    },
-    UnitTypeId.COLOSSUS: {
-        TargetType.Ground.value: {
-            IS_LIGHT: 1
-        }
-    },
+    UnitTypeId.IMMORTAL: {TargetType.Ground.value: {None: 2, IS_ARMORED: 3}},
+    UnitTypeId.COLOSSUS: {TargetType.Ground.value: {IS_LIGHT: 1}},
     # Stargate Units
-    UnitTypeId.ORACLE: {
-        TargetType.Ground.value: {
-            None: 0
-        }
-    },
+    UnitTypeId.ORACLE: {TargetType.Ground.value: {None: 0}},
     UnitTypeId.TEMPEST: {
-        TargetType.Ground.value: {
-            None: 4
-        },
-        TargetType.Air.value: {
-            None: 3,
-            IS_MASSIVE: 2
-        }
+        TargetType.Ground.value: {None: 4},
+        TargetType.Air.value: {None: 3, IS_MASSIVE: 2},
     },
     #
     # Terran
     #
-    UnitTypeId.SCV: {
-        TargetType.Ground.value: {
-            None: 0
-        }
-    },
+    UnitTypeId.SCV: {TargetType.Ground.value: {None: 0}},
     # Barracks Units
-    UnitTypeId.MARAUDER: {
-        TargetType.Ground.value: {
-            IS_ARMORED: 1
-        }
-    },
-    UnitTypeId.GHOST: {
-        TargetType.Any.value: {
-            IS_LIGHT: 1
-        }
-    },
+    UnitTypeId.MARAUDER: {TargetType.Ground.value: {IS_ARMORED: 1}},
+    UnitTypeId.GHOST: {TargetType.Any.value: {IS_LIGHT: 1}},
     # Factory Units
-    UnitTypeId.HELLION: {
-        TargetType.Ground.value: {
-            IS_LIGHT: 1
-        }
-    },
-    UnitTypeId.HELLIONTANK: {
-        TargetType.Ground.value: {
-            None: 2,
-            IS_LIGHT: 1
-        }
-    },
-    UnitTypeId.CYCLONE: {
-        TargetType.Any.value: {
-            None: 2
-        }
-    },
-    UnitTypeId.SIEGETANK: {
-        TargetType.Ground.value: {
-            None: 2,
-            IS_ARMORED: 1
-        }
-    },
-    UnitTypeId.SIEGETANKSIEGED: {
-        TargetType.Ground.value: {
-            None: 4,
-            IS_ARMORED: 1
-        }
-    },
+    UnitTypeId.HELLION: {TargetType.Ground.value: {IS_LIGHT: 1}},
+    UnitTypeId.HELLIONTANK: {TargetType.Ground.value: {None: 2, IS_LIGHT: 1}},
+    UnitTypeId.CYCLONE: {TargetType.Any.value: {None: 2}},
+    UnitTypeId.SIEGETANK: {TargetType.Ground.value: {None: 2, IS_ARMORED: 1}},
+    UnitTypeId.SIEGETANKSIEGED: {TargetType.Ground.value: {None: 4, IS_ARMORED: 1}},
     UnitTypeId.THOR: {
-        TargetType.Ground.value: {
-            None: 3
-        },
-        TargetType.Air.value: {
-            IS_LIGHT: 1
-        }
+        TargetType.Ground.value: {None: 3},
+        TargetType.Air.value: {IS_LIGHT: 1},
     },
     UnitTypeId.THORAP: {
-        TargetType.Ground.value: {
-            None: 3
-        },
-        TargetType.Air.value: {
-            None: 3,
-            IS_MASSIVE: 1
-        }
+        TargetType.Ground.value: {None: 3},
+        TargetType.Air.value: {None: 3, IS_MASSIVE: 1},
     },
     # Starport Units
-    UnitTypeId.VIKINGASSAULT: {
-        TargetType.Ground.value: {
-            IS_MECHANICAL: 1
-        }
-    },
-    UnitTypeId.LIBERATORAG: {
-        TargetType.Ground.value: {
-            None: 5
-        }
-    },
+    UnitTypeId.VIKINGASSAULT: {TargetType.Ground.value: {IS_MECHANICAL: 1}},
+    UnitTypeId.LIBERATORAG: {TargetType.Ground.value: {None: 5}},
     #
     # Zerg
     #
-    UnitTypeId.DRONE: {
-        TargetType.Ground.value: {
-            None: 0
-        }
-    },
+    UnitTypeId.DRONE: {TargetType.Ground.value: {None: 0}},
     # Hatch Tech Units (Queen, Ling, Bane, Roach, Ravager)
     UnitTypeId.BANELING: {
-        TargetType.Ground.value: {
-            None: 2,
-            IS_LIGHT: 2,
-            IS_STRUCTURE: 3
-        }
+        TargetType.Ground.value: {None: 2, IS_LIGHT: 2, IS_STRUCTURE: 3}
     },
-    UnitTypeId.ROACH: {
-        TargetType.Ground.value: {
-            None: 2
-        }
-    },
-    UnitTypeId.RAVAGER: {
-        TargetType.Ground.value: {
-            None: 2
-        }
-    },
+    UnitTypeId.ROACH: {TargetType.Ground.value: {None: 2}},
+    UnitTypeId.RAVAGER: {TargetType.Ground.value: {None: 2}},
     # Lair Tech Units (Hydra, Lurker, Ultra)
-    UnitTypeId.LURKERMPBURROWED: {
-        TargetType.Ground.value: {
-            None: 2,
-            IS_ARMORED: 1
-        }
-    },
-    UnitTypeId.ULTRALISK: {
-        TargetType.Ground.value: {
-            None: 3
-        }
-    },
+    UnitTypeId.LURKERMPBURROWED: {TargetType.Ground.value: {None: 2, IS_ARMORED: 1}},
+    UnitTypeId.ULTRALISK: {TargetType.Ground.value: {None: 3}},
     # Spire Units (Muta, Corruptor, BL)
-    UnitTypeId.CORRUPTOR: {
-        TargetType.Air.value: {
-            IS_MASSIVE: 1
-        }
-    },
-    UnitTypeId.BROODLORD: {
-        TargetType.Ground.value: {
-            None: 2
-        }
-    },
+    UnitTypeId.CORRUPTOR: {TargetType.Air.value: {IS_MASSIVE: 1}},
+    UnitTypeId.BROODLORD: {TargetType.Ground.value: {None: 2}},
 }
 TARGET_HELPER = {
     1: "no target",

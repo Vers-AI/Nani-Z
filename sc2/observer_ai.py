@@ -27,28 +27,28 @@ class ObserverAI(BotAIInternal):
 
     @property
     def time(self) -> float:
-        """ Returns time in seconds, assumes the game is played on 'faster' """
+        """Returns time in seconds, assumes the game is played on 'faster'"""
         return self.state.game_loop / 22.4  # / (1/1.4) * (1/16)
 
     @property
     def time_formatted(self) -> str:
-        """ Returns time as string in min:sec format """
+        """Returns time as string in min:sec format"""
         t = self.time
         return f"{int(t // 60):02}:{int(t % 60):02}"
 
     @property
     def game_info(self) -> GameInfo:
-        """ See game_info.py """
+        """See game_info.py"""
         return self._game_info
 
     @property
     def game_data(self) -> GameData:
-        """ See game_data.py """
+        """See game_data.py"""
         return self._game_data
 
     @property
     def client(self) -> Client:
-        """ See client.py """
+        """See client.py"""
         return self._client
 
     def alert(self, alert_code: Alert) -> bool:
@@ -106,7 +106,9 @@ class ObserverAI(BotAIInternal):
         return self.game_info.start_locations
 
     async def get_available_abilities(
-        self, units: Union[List[Unit], Units], ignore_resource_requirements: bool = False
+        self,
+        units: Union[List[Unit], Units],
+        ignore_resource_requirements: bool = False,
     ) -> List[List[AbilityId]]:
         """Returns available abilities of one or more units. Right now only checks cooldown, energy cost, and whether the ability has been researched.
 
@@ -120,7 +122,9 @@ class ObserverAI(BotAIInternal):
 
         :param units:
         :param ignore_resource_requirements:"""
-        return await self.client.query_available_abilities(units, ignore_resource_requirements)
+        return await self.client.query_available_abilities(
+            units, ignore_resource_requirements
+        )
 
     async def on_unit_destroyed(self, unit_tag: int):
         """

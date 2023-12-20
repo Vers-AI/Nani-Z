@@ -43,7 +43,7 @@ class ExpiringDict(OrderedDict):
         return self.bot.state.game_loop
 
     def __contains__(self, key) -> bool:
-        """ Return True if dict has key, else False, e.g. 'key in dict' """
+        """Return True if dict has key, else False, e.g. 'key in dict'"""
         with self.lock:
             if OrderedDict.__contains__(self, key):
                 # Each item is a list of [value, frame time]
@@ -54,7 +54,7 @@ class ExpiringDict(OrderedDict):
         return False
 
     def __getitem__(self, key, with_age=False) -> Any:
-        """ Return the item of the dict using d[key] """
+        """Return the item of the dict using d[key]"""
         with self.lock:
             # Each item is a list of [value, frame time]
             item = OrderedDict.__getitem__(self, key)
@@ -66,12 +66,12 @@ class ExpiringDict(OrderedDict):
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        """ Set d[key] = value """
+        """Set d[key] = value"""
         with self.lock:
             OrderedDict.__setitem__(self, key, (value, self.frame))
 
     def __repr__(self):
-        """ Printable version of the dict instead of getting memory adress """
+        """Printable version of the dict instead of getting memory adress"""
         print_list = []
         with self.lock:
             for key, value in OrderedDict.items(self):
@@ -84,14 +84,15 @@ class ExpiringDict(OrderedDict):
         return self.__repr__()
 
     def __iter__(self):
-        """ Override 'for key in dict:' """
+        """Override 'for key in dict:'"""
         with self.lock:
             return self.keys()
 
     # TODO find a way to improve len
     def __len__(self):
         """Override len method as key value pairs aren't instantly being deleted, but only on __get__(item).
-        This function is slow because it has to check if each element is not expired yet."""
+        This function is slow because it has to check if each element is not expired yet.
+        """
         with self.lock:
             count = 0
             for _ in self.values():
@@ -99,7 +100,7 @@ class ExpiringDict(OrderedDict):
             return count
 
     def pop(self, key, default=None, with_age=False):
-        """ Return the item and remove it """
+        """Return the item and remove it"""
         with self.lock:
             if OrderedDict.__contains__(self, key):
                 item = OrderedDict.__getitem__(self, key)
@@ -116,7 +117,7 @@ class ExpiringDict(OrderedDict):
             return default
 
     def get(self, key, default=None, with_age=False):
-        """ Return the value for key if key is in dict, else default """
+        """Return the value for key if key is in dict, else default"""
         with self.lock:
             if OrderedDict.__contains__(self, key):
                 item = OrderedDict.__getitem__(self, key)
@@ -137,21 +138,21 @@ class ExpiringDict(OrderedDict):
                 self[key] = value
 
     def items(self) -> Iterable:
-        """ Return iterator of zipped list [keys, values] """
+        """Return iterator of zipped list [keys, values]"""
         with self.lock:
             for key, value in OrderedDict.items(self):
                 if self.frame - value[1] < self.max_age:
                     yield key, value[0]
 
     def keys(self) -> Iterable:
-        """ Return iterator of keys """
+        """Return iterator of keys"""
         with self.lock:
             for key, value in OrderedDict.items(self):
                 if self.frame - value[1] < self.max_age:
                     yield key
 
     def values(self) -> Iterable:
-        """ Return iterator of values """
+        """Return iterator of values"""
         with self.lock:
             for value in OrderedDict.values(self):
                 if self.frame - value[1] < self.max_age:

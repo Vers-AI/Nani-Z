@@ -125,11 +125,12 @@ class SC2Process:
     @property
     def versions(self):
         """Opens the versions.json file which origins from
-        https://github.com/Blizzard/s2client-proto/blob/master/buildinfo/versions.json"""
+        https://github.com/Blizzard/s2client-proto/blob/master/buildinfo/versions.json
+        """
         return VERSIONS
 
     def find_data_hash(self, target_sc2_version: str) -> Optional[str]:
-        """ Returns the data hash from the matching version string. """
+        """Returns the data hash from the matching version string."""
         version: dict
         for version in self.versions:
             if version["label"] == target_sc2_version:
@@ -138,7 +139,9 @@ class SC2Process:
 
     def _launch(self):
         if self._base_build:
-            executable = str(paths.latest_executeble(Paths.BASE / "Versions", self._base_build))
+            executable = str(
+                paths.latest_executeble(Paths.BASE / "Versions", self._base_build)
+            )
         else:
             executable = str(Paths.EXECUTABLE)
         if self._port is None:
@@ -161,7 +164,7 @@ class SC2Process:
         if self._sc2_version:
 
             def special_match(strg: str):
-                """ Tests if the specified version is in the versions.py dict. """
+                """Tests if the specified version is in the versions.py dict."""
                 for version in self.versions:
                     if version["label"] == strg:
                         return True

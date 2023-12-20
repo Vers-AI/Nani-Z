@@ -17,11 +17,12 @@ def get(name: str) -> Map:
         elif Map.matches_target_map_name(map_dir, name):
             return Map(map_dir)
 
-    raise KeyError(f"Map '{name}' was not found. Please put the map file in \"/StarCraft II/Maps/\".")
+    raise KeyError(
+        f"Map '{name}' was not found. Please put the map file in \"/StarCraft II/Maps/\"."
+    )
 
 
 class Map:
-
     def __init__(self, path: Path):
         self.path = path
 

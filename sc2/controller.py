@@ -9,7 +9,6 @@ from sc2.protocol import Protocol
 
 
 class Controller(Protocol):
-
     def __init__(self, ws, process):
         super().__init__(ws)
         self._process = process
@@ -19,9 +18,13 @@ class Controller(Protocol):
         # pylint: disable=W0212
         return self._process._process is not None
 
-    async def create_game(self, game_map, players, realtime: bool, random_seed=None, disable_fog=None):
+    async def create_game(
+        self, game_map, players, realtime: bool, random_seed=None, disable_fog=None
+    ):
         req = sc_pb.RequestCreateGame(
-            local_map=sc_pb.LocalMap(map_path=str(game_map.relative_path)), realtime=realtime, disable_fog=disable_fog
+            local_map=sc_pb.LocalMap(map_path=str(game_map.relative_path)),
+            realtime=realtime,
+            disable_fog=disable_fog,
         )
         if random_seed is not None:
             req.random_seed = random_seed
@@ -46,20 +49,26 @@ class Controller(Protocol):
         return result
 
     async def request_save_map(self, download_path: str):
-        """ Not working on linux. """
+        """Not working on linux."""
         req = sc_pb.RequestSaveMap(map_path=download_path)
         result = await self._execute(save_map=req)
         return result
 
     async def request_replay_info(self, replay_path: str):
-        """ Not working on linux. """
+        """Not working on linux."""
         req = sc_pb.RequestReplayInfo(replay_path=replay_path, download_data=False)
         result = await self._execute(replay_info=req)
         return result
 
-    async def start_replay(self, replay_path: str, realtime: bool, observed_id: int = 0):
+    async def start_replay(
+        self, replay_path: str, realtime: bool, observed_id: int = 0
+    ):
         ifopts = sc_pb.InterfaceOptions(
-            raw=True, score=True, show_cloaked=True, raw_affects_selection=True, raw_crop_to_playable_area=False
+            raw=True,
+            score=True,
+            show_cloaked=True,
+            raw_affects_selection=True,
+            raw_crop_to_playable_area=False,
         )
         if platform.system() == "Linux":
             replay_name = Path(replay_path).name
@@ -72,9 +81,14 @@ class Controller(Protocol):
             replay_path = replay_name
 
         req = sc_pb.RequestStartReplay(
-            replay_path=replay_path, observed_player_id=observed_id, realtime=realtime, options=ifopts
+            replay_path=replay_path,
+            observed_player_id=observed_id,
+            realtime=realtime,
+            options=ifopts,
         )
 
         result = await self._execute(start_replay=req)
-        assert result.status == 4, f"{result.start_replay.error} - {result.start_replay.error_details}"
+        assert (
+            result.status == 4
+        ), f"{result.start_replay.error} - {result.start_replay.error_details}"
         return result
