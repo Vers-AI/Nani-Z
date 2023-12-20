@@ -29,7 +29,7 @@ class MyBot(AresBot):
 
     async def on_step(self, iteration: int) -> None:
         # retrieves zergling and roaches
-        zerling: Units = self.units(UnitTypeId.ZERGLING)
+        zergling: Units = self.units(UnitTypeId.ZERGLING)
         roaches: Units = self.units(UnitTypeId.ROACH)
 
         # define targets and grids
@@ -37,7 +37,7 @@ class MyBot(AresBot):
         ground_grid: np.ndarray = self.mediator.get_ground_grid
 
         # execute manuevers
-        self.do_zergling_engagement(zerling, enemy_units, ground_grid)
+        self.do_zergling_engagement(zergling, enemy_units, ground_grid)
         self.do_roach_pylon_attack(roaches, ground_grid)
 
     def do_zergling_engagement(
