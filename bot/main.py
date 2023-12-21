@@ -46,7 +46,7 @@ class MyBot(AresBot):
         for zergling in zerglings:
             zergling_maneuver = CombatManeuver()
             if enemy_pylon and cy_distance_to(zergling.position, enemy_pylon.position) < 15.0:
-                zergling_maneuver.add(AttackTarget(zergling, enemy_pylon))
+                zergling_maneuver.add(AMove(zergling, enemy_start_location))
             else:
                 zergling_maneuver.add(PathUnitToTarget(zergling, grid, enemy_start_location, success_at_distance=5.0))
             self.register_behavior(zergling_maneuver)
