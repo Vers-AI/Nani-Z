@@ -32,20 +32,19 @@ class MyBot(AresBot):
         super().__init__(game_step_override)
 
     async def on_step(self, iteration: int):
-        
+
         # retrieves zergling and roaches
         zerglings = self.units(UnitTypeId.ZERGLING)
         roaches = self.units(UnitTypeId.ROACH)
 
-        #define targets and grid
+        # define targets and grid
         enemy_units = self.enemy_units
         ground_grid = self.game_info.pathing_grid
 
-      #call the engagement for zergling and pylon attack for roaches
+        # call the engagement for zergling and pylon attack for roaches
         self.do_zergling_engagement(zerglings, enemy_units, ground_grid)
-        self.do_roach_pylon_attack(roaches, enemy_units, ground_grid) 
-        
-    
+        self.do_roach_pylon_attack(roaches, enemy_units, ground_grid)
+
     def do_zergling_engagement(
         self,
         zerglings: Units,
@@ -67,7 +66,9 @@ class MyBot(AresBot):
             closest_enemy: Unit = cy_closest_to(zergling, enemies)
             if closest_enemy:
                 zergling_maneuver = CombatManeuver()
-                zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy, grid=grid))
+                zergling_maneuver.add(
+                    StutterUnitBack(zergling, closest_enemy, grid=grid)
+                )
                 zergling_maneuver.add(AMove(zergling, self.enemy_start_locations[0]))
                 self.register_behavior(zergling_maneuver)
 
@@ -91,12 +92,16 @@ class MyBot(AresBot):
         for roach in roaches:
             roach_maneuver = CombatManeuver()
             # Path to the enemy start location
-            roach_maneuver.add(PathUnitToTarget(roach, grid, enemy_start_location, success_at_distance=5.0))
+            roach_maneuver.add(
+                PathUnitToTarget(
+                    roach, grid, enemy_start_location, success_at_distance=5.0
+                )
+            )
 
             # If a pylon is found, attack it
             if enemy_pylon:
                 roach_maneuver.add(AttackTarget(roach, enemy_pylon))
-            
+
             self.register_behavior(roach_maneuver)
 
     def _find_enemy_pylon(self) -> Unit:
