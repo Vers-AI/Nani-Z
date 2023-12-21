@@ -1,6 +1,7 @@
 from typing import Optional
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
+from ares.cython_extensions.combat_utils import cy_pick_enemy_target
 from ares.cython_extensions.units_utils import cy_closest_to
 from ares.behaviors.combat.individual import (
     AMove,
