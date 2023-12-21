@@ -78,8 +78,8 @@ class MyBot(AresBot):
                 closest_enemy: Unit = cy_closest_to(zergling.position, enemies)  # Use zergling.position
                 if closest_enemy:
                     zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy))
-                    
-            zergling_maneuver.add(AMove(zergling, attack_target))
+            else:
+                zergling_maneuver.add(AMove(zergling, attack_target))
             self.register_behavior(zergling_maneuver)
 
     def do_roach_pylon_attack(
@@ -98,7 +98,7 @@ class MyBot(AresBot):
             The ground grid for pathing information.
         """
         enemy_start_location = self.enemy_start_locations[0]
-        enemy_pylon = self._find_enemy_pylon()
+        enemy_pylon = self._close_enemy_pylon()
 
         for roach in roaches:
             roach_maneuver = CombatManeuver()
@@ -115,7 +115,7 @@ class MyBot(AresBot):
 
             self.register_behavior(roach_maneuver)
 
-    def _find_enemy_pylon(self) -> Unit:
+    def _close_enemy_pylon(self) -> Unit:
         """Find the enemy pylon to target."""
         pylons = self.enemy_structures(UnitTypeId.PYLON)
         if pylons:
