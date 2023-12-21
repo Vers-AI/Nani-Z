@@ -76,8 +76,7 @@ class MyBot(AresBot):
             # If there are enemies, find the closest one and stutter step towards it
             if enemies:
                 closest_enemy: Unit = cy_closest_to(zergling.position, enemies)  # Use zergling.position
-                if closest_enemy:
-                    zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy))
+                zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy))
             else:
                 zergling_maneuver.add(AMove(zergling, attack_target))
             self.register_behavior(zergling_maneuver)
