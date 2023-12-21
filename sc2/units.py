@@ -335,7 +335,7 @@ class Units(list):
         if not self:
             return self
         if isinstance(position, Unit):
-            distance_squared = distance**2
+            distance_squared = distance ** 2
             return self.subgroup(
                 unit
                 for unit in self
@@ -364,7 +364,7 @@ class Units(list):
         if not self:
             return self
         if isinstance(position, Unit):
-            distance_squared = distance**2
+            distance_squared = distance ** 2
             return self.subgroup(
                 unit
                 for unit in self
@@ -399,8 +399,8 @@ class Units(list):
         if not self:
             return self
         if isinstance(position, Unit):
-            distance1_squared = distance1**2
-            distance2_squared = distance2**2
+            distance1_squared = distance1 ** 2
+            distance2_squared = distance2 ** 2
             return self.subgroup(
                 unit
                 for unit in self
@@ -459,7 +459,7 @@ class Units(list):
         # Return self because there are no enemies
         if not self:
             return self
-        distance_squared = distance**2
+        distance_squared = distance ** 2
         if len(self) == 1:
             if any(
                 self._bot_object._distance_squared_unit_to_unit(self[0], target)

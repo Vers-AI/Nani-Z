@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from sc2.unit import Unit
     from sc2.units import Units
 
-EPSILON = 10**-8
+EPSILON = 10 ** -8
 
 
 def _sign(num):
@@ -269,7 +269,7 @@ class Point2(Pointlike):
         distanceBetweenPoints = self.distance_to(p)
         assert r >= distanceBetweenPoints / 2
         # remaining distance from center towards the intersection, using pythagoras
-        remainingDistanceFromCenter = (r**2 - (distanceBetweenPoints / 2) ** 2) ** 0.5
+        remainingDistanceFromCenter = (r ** 2 - (distanceBetweenPoints / 2) ** 2) ** 0.5
         # center of both points
         offsetToCenter = Point2(((p.x - self.x) / 2, (p.y - self.y) / 2))
         center = self.offset(offsetToCenter)

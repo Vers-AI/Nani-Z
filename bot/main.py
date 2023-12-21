@@ -1,6 +1,7 @@
 from typing import Optional
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
+from ares.cython_extensions.combat_utils import cy_pick_enemy_target
 from ares.cython_extensions.units_utils import cy_closest_to
 from ares.behaviors.combat.individual import (
     AMove,
@@ -32,16 +33,16 @@ class MyBot(AresBot):
         super().__init__(game_step_override)
 
     async def on_step(self, iteration: int):
-        
+
         # retrieves zergling and roaches
         zerglings = self.units(UnitTypeId.ZERGLING)
         roaches = self.units(UnitTypeId.ROACH)
 
-        #define targets and grid
+        # define targets and grid
         enemy_units = self.enemy_units
         ground_grid = self.game_info.pathing_grid
 
-      #call the engagement for zergling and pylon attack for roaches
+        # call the engagement for zergling and pylon attack for roaches
         self.do_zergling_engagement(zerglings, enemy_units, ground_grid)
         self.do_roach_pylon_attack(roaches, ground_grid) 
         
@@ -92,12 +93,16 @@ class MyBot(AresBot):
         for roach in roaches:
             roach_maneuver = CombatManeuver()
             # Path to the enemy start location
-            roach_maneuver.add(PathUnitToTarget(roach, grid, enemy_start_location, success_at_distance=5.0))
+            roach_maneuver.add(
+                PathUnitToTarget(
+                    roach, grid, enemy_start_location, success_at_distance=5.0
+                )
+            )
 
             # If a pylon is found, attack it
             if enemy_pylon:
                 roach_maneuver.add(AttackTarget(roach, enemy_pylon))
-            
+
             self.register_behavior(roach_maneuver)
 
     def _find_enemy_pylon(self) -> Unit:

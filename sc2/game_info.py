@@ -110,7 +110,7 @@ class Ramp:
             p1 = points.pop().offset((self.x_offset, self.y_offset))
             p2 = points.pop().offset((self.x_offset, self.y_offset))
             # Offset from top point to barracks center is (2, 1)
-            intersects = p1.circle_intersection(p2, 5**0.5)
+            intersects = p1.circle_intersection(p2, 5 ** 0.5)
             any_lower_point = next(iter(self.lower))
             return max(intersects, key=lambda p: p.distance_to_point2(any_lower_point))
         raise Exception(
@@ -128,7 +128,7 @@ class Ramp:
             p2 = points.pop().offset((self.x_offset, self.y_offset))
             # Offset from top point to depot center is (1.5, 0.5)
             try:
-                intersects = p1.circle_intersection(p2, 2.5**0.5)
+                intersects = p1.circle_intersection(p2, 2.5 ** 0.5)
             except AssertionError:
                 # Returns None when no placement was found, this is the case on the map Honorgrounds LE with an exceptionally large main base ramp
                 return None
@@ -152,7 +152,7 @@ class Ramp:
             if depot_position is None:
                 return frozenset()
             # Offset from middle depot to corner depots is (2, 1)
-            intersects = center.circle_intersection(depot_position, 5**0.5)
+            intersects = center.circle_intersection(depot_position, 5 ** 0.5)
             return intersects
         raise Exception(
             "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
