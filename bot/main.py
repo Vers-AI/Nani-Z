@@ -43,7 +43,7 @@ class MyBot(AresBot):
 
       #call the engagement for zergling and pylon attack for roaches
         self.do_zergling_engagement(zerglings, enemy_units, ground_grid)
-        self.do_roach_pylon_attack(roaches, enemy_units, ground_grid) 
+        self.do_roach_pylon_attack(roaches, ground_grid) 
         
     
     def do_zergling_engagement(
@@ -64,12 +64,13 @@ class MyBot(AresBot):
             The ground grid for pathing information.
         """
         for zergling in zerglings:
-            closest_enemy: Unit = cy_closest_to(zergling, enemies)
-            if closest_enemy:
-                zergling_maneuver = CombatManeuver()
-                zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy, grid=grid))
-                zergling_maneuver.add(AMove(zergling, self.enemy_start_locations[0]))
-                self.register_behavior(zergling_maneuver)
+            if enemies:
+                closest_enemy = cy_closest_to(zergling.position, enemies)  # Use zergling.position
+                if closest_enemy:
+                    zergling_maneuver = CombatManeuver()
+                    zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy, grid=grid))
+                    zergling_maneuver.add(AMove(zergling, self.enemy_start_locations[0]))
+                    self.register_behavior(zergling_maneuver)
 
     def do_roach_pylon_attack(
         self,
