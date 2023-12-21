@@ -20,9 +20,11 @@ class MyBot(AresBot):
     combat_manager = None
 
     def __init__(self, game_step_override: Optional[int] = None):
+        
         super().__init__(game_step_override)
 
     async def on_step(self, iteration: int):
+        await super(MyBot, self).on_step(iteration)
         print(f"Game Loop Iteration: {iteration}")
         # retrieves zergling and roaches
         zerglings = self.units(UnitTypeId.ZERGLING)
