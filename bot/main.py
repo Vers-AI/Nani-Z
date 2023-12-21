@@ -13,6 +13,7 @@ from ares.behaviors.combat.individual import (
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.units import Units
 from sc2.unit import Unit
+from sc2.position import Point2
 
 import numpy as np
 from sc2.units import Units
@@ -33,14 +34,14 @@ class MyBot(AresBot):
         super().__init__(game_step_override)
 
     async def on_step(self, iteration: int):
-
+        print(f"Game Loop Iteration: {iteration}")
         # retrieves zergling and roaches
         zerglings = self.units(UnitTypeId.ZERGLING)
         roaches = self.units(UnitTypeId.ROACH)
 
         # define targets and grid
         enemy_units = self.enemy_units
-        ground_grid = self.game_info.pathing_grid
+        ground_grid = np.ndarray = self.mediator.get_ground_grid
 
         # call the engagement for zergling and pylon attack for roaches
         self.do_zergling_engagement(zerglings, enemy_units, ground_grid)
@@ -52,7 +53,11 @@ class MyBot(AresBot):
         zerglings: Units,
         enemies: Units,
         grid: np.ndarray,
-    ) -> None:
+    ):
+        print(f"Executing do_zergling_engagement with {len(zerglings)} zerglings")
+        # map center as teh default A-move target
+        target = self.game_info.map_center
+
         """Engage enemy units with zerglings and use stutter step behavior.
 
         Parameters
@@ -64,20 +69,25 @@ class MyBot(AresBot):
         grid : np.ndarray
             The ground grid for pathing information.
         """
+        print(enemies)
         for zergling in zerglings:
+            zergling_maneuver = CombatManeuver()
+
+            # If there are enemies, find the closest one and stutter step towards it
             if enemies:
-                closest_enemy = cy_closest_to(zergling.position, enemies)  # Use zergling.position
+                closest_enemy: Unit = cy_closest_to(zergling.position, enemies)  # Use zergling.position
                 if closest_enemy:
-                    zergling_maneuver = CombatManeuver()
-                    zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy, grid=grid))
-                    zergling_maneuver.add(AMove(zergling, self.enemy_start_locations[0]))
+                    zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy))
+                    
+                    zergling_maneuver.add(AMove(zergling, target))
                     self.register_behavior(zergling_maneuver)
 
     def do_roach_pylon_attack(
         self,
         roaches: Units,
         grid: np.ndarray,
-    ) -> None:
+    ):
+        print(f"Executing do_roach_pylon_attack with {len(roaches)} roaches")
         """Direct roaches to move towards the enemy start location and attack the pylon once in range.
 
         Parameters
