@@ -8,9 +8,18 @@ import warnings
 from abc import ABC
 from collections import Counter
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
-from typing import Counter as CounterType
-from typing import Dict, Generator, Iterable, List, Set, Tuple, Union, final
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Set,
+    Tuple,
+    Union,
+    final,
+)
 
 import numpy as np
 from loguru import logger
@@ -19,7 +28,6 @@ from s2clientprotocol import sc2api_pb2 as sc_pb
 from sc2.cache import property_cache_once_per_frame
 from sc2.constants import (
     ALL_GAS,
-    CREATION_ABILITY_FIX,
     IS_PLACEHOLDER,
     TERRAN_STRUCTURES_REQUIRE_SCV,
     FakeEffectID,
@@ -28,9 +36,8 @@ from sc2.constants import (
     mineral_ids,
 )
 from sc2.data import ActionResult, Race, race_townhalls
-from sc2.game_data import Cost, GameData
+from sc2.game_data import AbilityData, Cost, GameData
 from sc2.game_state import Blip, EffectData, GameState
-from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.pixel_map import PixelMap
@@ -196,14 +203,8 @@ class BotAIInternal(ABC):
                 # And that they are on the same terrain level
                 if any(
                     resource_a.distance_to(resource_b) <= resource_spread_threshold
-                    # check if terrain height measurement at resources is within 10 units
-                    # this is since some older maps have inconsistent terrain height
-                    # tiles at certain expansion locations
-                    and abs(
-                        height_grid[resource_a.position.rounded]
-                        - height_grid[resource_b.position.rounded]
-                    )
-                    <= 10
+                    and height_grid[resource_a.position.rounded]
+                    == height_grid[resource_b.position.rounded]
                     for resource_a, resource_b in itertools.product(group_a, group_b)
                 ):
                     # Remove the single groups and add the merged group
@@ -289,35 +290,23 @@ class BotAIInternal(ABC):
 
     @final
     @property_cache_once_per_frame
-    def _abilities_count_and_build_progress(
-        self,
-    ) -> Tuple[CounterType[AbilityId], Dict[AbilityId, float]]:
+    def _abilities_all_units(self) -> Tuple[Counter, Dict[AbilityData, float]]:
         """Cache for the already_pending function, includes protoss units warping in,
         all units in production and all structures, and all morphs"""
-        abilities_amount: CounterType[AbilityId] = Counter()
-        max_build_progress: Dict[AbilityId, float] = {}
+        abilities_amount = Counter()
+        max_build_progress: Dict[AbilityData, float] = {}
         unit: Unit
         for unit in self.units + self.structures:
             for order in unit.orders:
-                abilities_amount[order.ability.exact_id] += 1
+                abilities_amount[order.ability] += 1
             if not unit.is_ready:
                 if self.race != Race.Terran or not unit.is_structure:
                     # If an SCV is constructing a building, already_pending would count this structure twice
                     # (once from the SCV order, and once from "not structure.is_ready")
-                    if unit.type_id in CREATION_ABILITY_FIX:
-                        if unit.type_id == UnitTypeId.ARCHON:
-                            # Hotfix for archons in morph state
-                            creation_ability = AbilityId.ARCHON_WARP_TARGET
-                            abilities_amount[creation_ability] += 2
-                        else:
-                            # Hotfix for rich geysirs
-                            creation_ability = CREATION_ABILITY_FIX[unit.type_id]
-                            abilities_amount[creation_ability] += 1
-                    else:
-                        creation_ability: AbilityId = self.game_data.units[
-                            unit.type_id.value
-                        ].creation_ability.exact_id
-                        abilities_amount[creation_ability] += 1
+                    creation_ability: AbilityData = self.game_data.units[
+                        unit.type_id.value
+                    ].creation_ability
+                    abilities_amount[creation_ability] += 1
                     max_build_progress[creation_ability] = max(
                         max_build_progress.get(creation_ability, 0), unit.build_progress
                     )
@@ -326,9 +315,9 @@ class BotAIInternal(ABC):
 
     @final
     @property_cache_once_per_frame
-    def _worker_orders(self) -> CounterType[AbilityId]:
+    def _worker_orders(self) -> Counter:
         """This function is used internally, do not use! It is to store all worker abilities."""
-        abilities_amount: CounterType[AbilityId] = Counter()
+        abilities_amount = Counter()
         structures_in_production: Set[Union[Point2, int]] = set()
         for structure in self.structures:
             if structure.type_id in TERRAN_STRUCTURES_REQUIRE_SCV:
@@ -338,9 +327,15 @@ class BotAIInternal(ABC):
             for order in worker.orders:
                 # Skip if the SCV is constructing (not isinstance(order.target, int))
                 # or resuming construction (isinstance(order.target, int))
-                if order.target in structures_in_production:
+                is_int = isinstance(order.target, int)
+                if (
+                    is_int
+                    and order.target in structures_in_production
+                    or not is_int
+                    and Point2.from_proto(order.target) in structures_in_production
+                ):
                     continue
-                abilities_amount[order.ability.exact_id] += 1
+                abilities_amount[order.ability] += 1
         return abilities_amount
 
     @final
@@ -543,7 +538,7 @@ class BotAIInternal(ABC):
         # Set attributes from new state before on_step."""
         self.state: GameState = state  # See game_state.py
         # update pathing grid, which unfortunately is in GameInfo instead of GameState
-        self.game_info.pathing_grid = PixelMap(
+        self.game_info.pathing_grid: PixelMap = PixelMap(
             proto_game_info.game_info.start_raw.pathing_grid, in_bits=True
         )
         # Required for events, needs to be before self.units are initialized so the old units are stored
@@ -586,6 +581,8 @@ class BotAIInternal(ABC):
 
         if self.enemy_race == Race.Random and self.all_enemy_units:
             self.enemy_race = Race(self.all_enemy_units.first.race)
+        # else:
+        #     self.enemy_race = Race.Terran
 
     @final
     def _prepare_units(self):
@@ -736,6 +733,7 @@ class BotAIInternal(ABC):
         proto_game_info = await self.client._execute(game_info=sc_pb.RequestGameInfo())
         self._prepare_step(gs, proto_game_info)
         await self.issue_events()
+        # await self.on_step(-1)
 
     @final
     async def issue_events(self):
@@ -838,19 +836,21 @@ class BotAIInternal(ABC):
 
         # Call events for enemy unit left vision
         enemy_units_left_vision: Set[int] = (
-            set(self._enemy_units_previous_map) - self.enemy_units.tags
+            set(self._enemy_units_previous_map.keys()) - self.enemy_units.tags
         )
         for enemy_unit_tag in enemy_units_left_vision:
             await self.on_enemy_unit_left_vision(enemy_unit_tag)
         enemy_structures_left_vision: Set[int] = (
-            set(self._enemy_structures_previous_map) - self.enemy_structures.tags
+            set(self._enemy_structures_previous_map.keys()) - self.enemy_structures.tags
         )
         for enemy_structure_tag in enemy_structures_left_vision:
             await self.on_enemy_unit_left_vision(enemy_structure_tag)
 
     @final
     async def _issue_unit_dead_events(self):
-        for unit_tag in self.state.dead_units & set(self._all_units_previous_map):
+        for unit_tag in self.state.dead_units & set(
+            self._all_units_previous_map.keys()
+        ):
             await self.on_unit_destroyed(unit_tag)
 
     # DISTANCE CALCULATION

@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 import math
 import random
+import warnings
 from typing import TYPE_CHECKING, Iterable, List, Set, Tuple, Union
 
 from s2clientprotocol import common_pb2 as common_pb
@@ -43,6 +44,36 @@ class Pointlike(tuple):
 
         :param p2:"""
         return (self[0] - p2[0]) ** 2 + (self[1] - p2[1]) ** 2
+
+    def is_closer_than(
+        self, distance: Union[int, float], p: Union[Unit, Point2]
+    ) -> bool:
+        """Check if another point (or unit) is closer than the given distance.
+
+        :param distance:
+        :param p:"""
+        warnings.warn(
+            "position.is_closer_than is deprecated and will be deleted soon",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        p = p.position
+        return self.distance_to_point2(p) < distance
+
+    def is_further_than(
+        self, distance: Union[int, float], p: Union[Unit, Point2]
+    ) -> bool:
+        """Check if another point (or unit) is further than the given distance.
+
+        :param distance:
+        :param p:"""
+        warnings.warn(
+            "position.is_further_than is deprecated and will be deleted soon",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        p = p.position
+        return self.distance_to_point2(p) > distance
 
     def sort_by_distance(self, ps: Union[Units, Iterable[Point2]]) -> List[Point2]:
         """This returns the target points sorted as list.
@@ -202,14 +233,10 @@ class Point2(Pointlike):
     def to3(self) -> Point3:
         return Point3((*self, 0))
 
-    def round(self, decimals: int) -> Point2:
-        """Rounds each number in the tuple to the amount of given decimals."""
-        return Point2((round(self[0], decimals), round(self[1], decimals)))
-
-    def offset(self, p: Point2) -> Point2:
+    def offset(self, p: Point2):
         return Point2((self[0] + p[0], self[1] + p[1]))
 
-    def random_on_distance(self, distance) -> Point2:
+    def random_on_distance(self, distance):
         if isinstance(distance, (tuple, list)):  # interval
             distance = distance[0] + random.random() * (distance[1] - distance[0])
 
@@ -271,13 +298,17 @@ class Point2(Pointlike):
         }
 
     @property
-    def neighbors8(self) -> set:
-        return self.neighbors4 | {
+    def neighbors4_diagonal(self) -> set:
+        return {
             Point2((self.x - 1, self.y - 1)),
             Point2((self.x - 1, self.y + 1)),
             Point2((self.x + 1, self.y - 1)),
             Point2((self.x + 1, self.y + 1)),
         }
+
+    @property
+    def neighbors8(self) -> set:
+        return self.neighbors4 | self.neighbors4_diagonal
 
     def negative_offset(self, other: Point2) -> Point2:
         return self.__class__((self[0] - other[0], self[1] - other[1]))
@@ -327,14 +358,14 @@ class Point2(Pointlike):
         return abs(other.x - self.x) + abs(other.y - self.y)
 
     @staticmethod
-    def center(points: List[Point2]) -> Point2:
+    def center(units_or_points: Iterable[Point2]) -> Point2:
         """Returns the central point for points in list
 
-        :param points:"""
+        :param units_or_points:"""
         s = Point2((0, 0))
-        for p in points:
+        for p in units_or_points:
             s += p
-        return s / len(points)
+        return s / len(units_or_points)
 
 
 class Point3(Point2):

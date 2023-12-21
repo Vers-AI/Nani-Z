@@ -1,15 +1,18 @@
 from typing import Optional
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
+from ares.cython_extensions.units_utils import cy_closest_to
 from ares.behaviors.combat.individual import (
     AMove,
     PathUnitToTarget,
     StutterUnitBack,
 )
 
+from sc2.ids.unit_typeid import UnitTypeId
 from sc2.units import Units
 
 import numpy as np
+from sc2.units import Units
 
 
 class MyBot(AresBot):
@@ -26,24 +29,25 @@ class MyBot(AresBot):
         """
         super().__init__(game_step_override)
 
-    async def on_step(self, iteration: int) -> None:
+    async def on_step(self, iteration: int):
+        
         # retrieves zergling and roaches
-        zergling: Units = self.units(UnitTypeId.ZERGLING)
-        roaches: Units = self.units(UnitTypeId.ROACH)
+        zerglings = self.units(UnitTypeId.ZERGLING)
+        roaches = self.units(UnitTypeId.ROACH)
 
-        # define targets and grids
-        enemy_units: Units = self.enemy_units
-        ground_grid: np.ndarray = self.mediator.get_ground_grid
+        #define targets and grid
+        enemy_units = self.enemy_units
+        ground_grid = np.ndarray = self.game_info.pathing_grid
 
-        # execute manuevers
-        self.do_zergling_engagement(zergling, enemy_units, ground_grid)
-        self.do_roach_pylon_attack(roaches, ground_grid)
-
+      #call the engagement for zergling and pylon attack for roaches
+        self.do_zergling_engagement(zerglings, enemy_units, ground_grid)
+        self.do_roach_pylon_attack(roaches, enemy_units, ground_grid) 
+        
+    
     def do_zergling_engagement(
         self,
         zergling: Units,
         enemies: Units,
-        grid: np.ndarray,
     ) -> None:
         """Engage enemy units with zergling
 
@@ -56,10 +60,10 @@ class MyBot(AresBot):
         grid :
             Grid of the ground
         """
-        zergling_maneuver = CombatManeuver = CombatManeuver()
+        zergling_maneuver: CombatManeuver = CombatManeuver()
         # engage enemy and retreat if needed
-        zergling_maneuver.add(StutterUnitBack(units=zergling, grid=grid))
-        zergling_maneuver.add(AMove(units=zergling, targets=enemies))
+        zergling_maneuver.add(StutterUnitBack(unit=zergling, target=enemies))
+        zergling_maneuver.add(AMove(unit=zergling, target=enemies))
         self.register_behavior(zergling_maneuver)
 
     def do_roach_pylon_attack(
@@ -67,23 +71,17 @@ class MyBot(AresBot):
         roaches: Units,
         grid: np.ndarray,
     ) -> None:
-        """Attack enemy pylons with roaches
-
-        Parameters
-        ----------
-        units :
-            Roaches to attack with
-        grid :
-            Grid of the ground
-        """
-        roach_maneuver = CombatManeuver = CombatManeuver()
-        # attack enemy pylons and retreat if needed
+        """Attack move towards the enemy pylon and when it sees it prioritize it"""
+        roach_maneuver: CombatManeuver = CombatManeuver()
+        # move towards the enemy and once it sees the pylon prioritize it
         roach_maneuver.add(
             PathUnitToTarget(
-                units=roaches,
+                unit=roaches,
                 grid=grid,
-                target=self.enemy_structures(UnitTypeId.PYLON).first.position,
+                target=self.enemy_start_locations[0],
+                success_at_distance=5.0,
             )
         )
+        # roach_maneuver.add(AttackTarget(unit=roaches, target=self.enemy_structures.first))
 
         self.register_behavior(roach_maneuver)

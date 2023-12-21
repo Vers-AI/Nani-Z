@@ -6,8 +6,8 @@ from typing import Dict
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 
-# from sc2.ids.buff_id import BuffId
-# from sc2.ids.effect_id import EffectId
+# from ..ids.buff_id import BuffId
+# from ..ids.effect_id import EffectId
 
 UPGRADE_RESEARCHED_FROM: Dict[UpgradeId, UnitTypeId] = {
     UpgradeId.ADEPTPIERCINGATTACK: UnitTypeId.TWILIGHTCOUNCIL,
@@ -24,6 +24,7 @@ UPGRADE_RESEARCHED_FROM: Dict[UpgradeId, UnitTypeId] = {
     UpgradeId.DARKTEMPLARBLINKUPGRADE: UnitTypeId.DARKSHRINE,
     UpgradeId.DIGGINGCLAWS: UnitTypeId.LURKERDENMP,
     UpgradeId.DRILLCLAWS: UnitTypeId.FACTORYTECHLAB,
+    UpgradeId.ENHANCEDSHOCKWAVES: UnitTypeId.GHOSTACADEMY,
     UpgradeId.EVOLVEGROOVEDSPINES: UnitTypeId.HYDRALISKDEN,
     UpgradeId.EVOLVEMUSCULARAUGMENTS: UnitTypeId.HYDRALISKDEN,
     UpgradeId.EXTENDEDTHERMALLANCE: UnitTypeId.ROBOTICSBAY,
@@ -57,6 +58,7 @@ UPGRADE_RESEARCHED_FROM: Dict[UpgradeId, UnitTypeId] = {
     UpgradeId.PROTOSSSHIELDSLEVEL3: UnitTypeId.FORGE,
     UpgradeId.PSISTORMTECH: UnitTypeId.TEMPLARARCHIVE,
     UpgradeId.PUNISHERGRENADES: UnitTypeId.BARRACKSTECHLAB,
+    UpgradeId.RAVENCORVIDREACTOR: UnitTypeId.STARPORTTECHLAB,
     UpgradeId.SHIELDWALL: UnitTypeId.BARRACKSTECHLAB,
     UpgradeId.SMARTSERVOS: UnitTypeId.FACTORYTECHLAB,
     UpgradeId.STIMPACK: UnitTypeId.BARRACKSTECHLAB,

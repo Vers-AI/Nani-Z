@@ -72,16 +72,6 @@ def main():
             # "BotMicroArena_6",
         ]
 
-        # alternative example code if finding the map path is problematic
-        # map_list: List[str] = [
-        #     "BerlingradAIE",
-        #     "InsideAndOutAIE",
-        #     "MoondanceAIE",
-        #     "StargazersAIE",
-        #     "WaterfallAIE",
-        #     "HardwireAIE",
-        # ]
-
         random_race = random.choice([Race.Zerg, Race.Terran, Race.Protoss])
         print("Starting local game...")
         run_game(

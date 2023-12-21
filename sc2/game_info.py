@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import heapq
 from collections import deque
-from dataclasses import dataclass
 from functools import cached_property
-from typing import Deque, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple
+from typing import Any, Deque, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple
 
 import numpy as np
 
@@ -13,38 +12,41 @@ from sc2.player import Player, Race
 from sc2.position import Point2, Rect, Size
 
 
-@dataclass
 class Ramp:
-    points: FrozenSet[Point2]
-    game_info: GameInfo
-
-    @property
-    def x_offset(self) -> float:
+    def __init__(self, points: FrozenSet[Point2], game_info: GameInfo):
+        """
+        :param points:
+        :param game_info:
+        """
+        self.cache: Dict[str, Any] = {}
+        self._points: FrozenSet[Point2] = points
+        self.__game_info = game_info
         # Tested by printing actual building locations vs calculated depot positions
-        return 0.5
-
-    @property
-    def y_offset(self) -> float:
-        # Tested by printing actual building locations vs calculated depot positions
-        return 0.5
+        self.x_offset = 0.5
+        self.y_offset = 0.5
+        self.cache = {}
 
     @cached_property
     def _height_map(self):
-        return self.game_info.terrain_height
+        return self.__game_info.terrain_height
 
     @cached_property
     def size(self) -> int:
-        return len(self.points)
+        return len(self._points)
 
     def height_at(self, p: Point2) -> int:
         return self._height_map[p]
+
+    @cached_property
+    def points(self) -> FrozenSet[Point2]:
+        return self._points.copy()
 
     @cached_property
     def upper(self) -> FrozenSet[Point2]:
         """Returns the upper points of a ramp."""
         current_max = -10000
         result = set()
-        for p in self.points:
+        for p in self._points:
             height = self.height_at(p)
             if height > current_max:
                 current_max = height
@@ -78,7 +80,7 @@ class Ramp:
     def lower(self) -> FrozenSet[Point2]:
         current_min = 10000
         result = set()
-        for p in self.points:
+        for p in self._points:
             height = self.height_at(p)
             if height < current_min:
                 current_min = height
@@ -111,7 +113,6 @@ class Ramp:
             intersects = p1.circle_intersection(p2, 5**0.5)
             any_lower_point = next(iter(self.lower))
             return max(intersects, key=lambda p: p.distance_to_point2(any_lower_point))
-        # pylint: disable=broad-exception-raised
         raise Exception(
             "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
         )
@@ -131,9 +132,8 @@ class Ramp:
             except AssertionError:
                 # Returns None when no placement was found, this is the case on the map Honorgrounds LE with an exceptionally large main base ramp
                 return None
-            any_lower_point = next(iter(self.lower))
-            return max(intersects, key=lambda p: p.distance_to_point2(any_lower_point))
-        # pylint: disable=broad-exception-raised
+            anyLowerPoint = next(iter(self.lower))
+            return max(intersects, key=lambda p: p.distance_to_point2(anyLowerPoint))
         raise Exception(
             "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
         )
@@ -154,7 +154,6 @@ class Ramp:
             # Offset from middle depot to corner depots is (2, 1)
             intersects = center.circle_intersection(depot_position, 5**0.5)
             return intersects
-        # pylint: disable=broad-exception-raised
         raise Exception(
             "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
         )
@@ -168,7 +167,6 @@ class Ramp:
                 self.barracks_in_middle.x + 1
                 > max(self.corner_depots, key=lambda depot: depot.x).x
             )
-        # pylint: disable=broad-exception-raised
         raise Exception(
             "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
         )
@@ -179,10 +177,10 @@ class Ramp:
         if self.barracks_in_middle is None:
             return None
         if len(self.upper2_for_ramp_wall) == 2:
-            if self.barracks_can_fit_addon:
-                return self.barracks_in_middle
-            return self.barracks_in_middle.offset((-2, 0))
-        # pylint: disable=broad-exception-raised
+            # if self.barracks_can_fit_addon:
+            return self.barracks_in_middle
+            # else:
+            #    return self.barracks_in_middle.offset((-2, 0))
         raise Exception(
             "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
         )
@@ -195,7 +193,6 @@ class Ramp:
         if len(self.upper) not in {2, 5}:
             return None
         if len(self.upper2_for_ramp_wall) != 2:
-            # pylint: disable=broad-exception-raised
             raise Exception(
                 "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
             )
@@ -220,13 +217,12 @@ class Ramp:
             sorted_depots = sorted(
                 self.corner_depots,
                 key=lambda depot: depot.distance_to(
-                    self.game_info.player_start_location
+                    self.__game_info.player_start_location
                 ),
             )
-            wall1: Point2 = sorted_depots[1].offset(direction)
+            wall1 = sorted_depots[1].offset(direction)
             wall2 = middle + direction + (middle - wall1) / 1.5
             return frozenset([wall1, wall2])
-        # pylint: disable=broad-exception-raised
         raise Exception(
             "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
         )
@@ -240,7 +236,6 @@ class Ramp:
         if len(self.upper) not in {2, 5}:
             return None
         if len(self.upper2_for_ramp_wall) != 2:
-            # pylint: disable=broad-exception-raised
             raise Exception(
                 "Not implemented. Trying to access a ramp that has a wrong amount of upper points."
             )
@@ -250,7 +245,7 @@ class Ramp:
         # sort depots based on distance to start to get wallin orientation
         sorted_depots = sorted(
             self.corner_depots,
-            key=lambda x: x.distance_to(self.game_info.player_start_location),
+            key=lambda x: x.distance_to(self.__game_info.player_start_location),
         )
         return sorted_depots[0].negative_offset(direction)
 
@@ -286,8 +281,10 @@ class GameInfo:
             for p in self._proto.player_info
         }
         self.start_locations: List[Point2] = [
-            Point2.from_proto(sl).round(decimals=1)
-            for sl in self._proto.start_raw.start_locations
+            Point2.from_proto(sl) for sl in self._proto.start_raw.start_locations
+        ]
+        self.start_locations = [
+            Point2((round(x, 1), round(y, 1))) for x, y in self.start_locations
         ]
         self.player_start_location: Point2 = (
             None  # Filled later by BotAI._prepare_first_step

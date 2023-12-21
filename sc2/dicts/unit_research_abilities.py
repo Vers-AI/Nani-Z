@@ -7,8 +7,8 @@ from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.ids.upgrade_id import UpgradeId
 
-# from sc2.ids.buff_id import BuffId
-# from sc2.ids.effect_id import EffectId
+# from ..ids.buff_id import BuffId
+# from ..ids.effect_id import EffectId
 
 RESEARCH_INFO: Dict[
     UnitTypeId,
@@ -269,7 +269,10 @@ RESEARCH_INFO: Dict[
         },
     },
     UnitTypeId.GHOSTACADEMY: {
-        UpgradeId.PERSONALCLOAKING: {"ability": AbilityId.RESEARCH_PERSONALCLOAKING}
+        UpgradeId.ENHANCEDSHOCKWAVES: {
+            "ability": AbilityId.GHOSTACADEMYRESEARCH_RESEARCHENHANCEDSHOCKWAVES
+        },
+        UpgradeId.PERSONALCLOAKING: {"ability": AbilityId.RESEARCH_PERSONALCLOAKING},
     },
     UnitTypeId.GREATERSPIRE: {
         UpgradeId.ZERGFLYERARMORSLEVEL1: {
@@ -396,6 +399,9 @@ RESEARCH_INFO: Dict[
         UpgradeId.BANSHEECLOAK: {"ability": AbilityId.RESEARCH_BANSHEECLOAKINGFIELD},
         UpgradeId.BANSHEESPEED: {
             "ability": AbilityId.RESEARCH_BANSHEEHYPERFLIGHTROTORS
+        },
+        UpgradeId.RAVENCORVIDREACTOR: {
+            "ability": AbilityId.RESEARCH_RAVENCORVIDREACTOR
         },
     },
     UnitTypeId.TEMPLARARCHIVE: {

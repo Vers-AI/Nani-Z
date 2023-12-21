@@ -6,8 +6,8 @@ from typing import Dict, Set
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 
-# from sc2.ids.buff_id import BuffId
-# from sc2.ids.effect_id import EffectId
+# from ..ids.buff_id import BuffId
+# from ..ids.effect_id import EffectId
 
 UNIT_ABILITIES: Dict[UnitTypeId, Set[AbilityId]] = {
     UnitTypeId.ADEPT: {
@@ -256,6 +256,7 @@ UNIT_ABILITIES: Dict[UnitTypeId, Set[AbilityId]] = {
         AbilityId.SMART,
         AbilityId.STOP_STOP,
     },
+    UnitTypeId.CREEPTUMOR: {AbilityId.BUILD_CREEPTUMOR_TUMOR, AbilityId.SMART},
     UnitTypeId.CREEPTUMORBURROWED: {
         AbilityId.BUILD_CREEPTUMOR,
         AbilityId.BUILD_CREEPTUMOR_TUMOR,
@@ -453,6 +454,7 @@ UNIT_ABILITIES: Dict[UnitTypeId, Set[AbilityId]] = {
     },
     UnitTypeId.GHOSTACADEMY: {
         AbilityId.BUILD_NUKE,
+        AbilityId.GHOSTACADEMYRESEARCH_RESEARCHENHANCEDSHOCKWAVES,
         AbilityId.RESEARCH_PERSONALCLOAKING,
     },
     UnitTypeId.GHOSTNOVA: {
@@ -1202,6 +1204,7 @@ UNIT_ABILITIES: Dict[UnitTypeId, Set[AbilityId]] = {
     UnitTypeId.STARPORTTECHLAB: {
         AbilityId.RESEARCH_BANSHEECLOAKINGFIELD,
         AbilityId.RESEARCH_BANSHEEHYPERFLIGHTROTORS,
+        AbilityId.RESEARCH_RAVENCORVIDREACTOR,
     },
     UnitTypeId.SUPPLYDEPOT: {AbilityId.MORPH_SUPPLYDEPOT_LOWER},
     UnitTypeId.SUPPLYDEPOTLOWERED: {AbilityId.MORPH_SUPPLYDEPOT_RAISE},
@@ -1377,7 +1380,7 @@ UNIT_ABILITIES: Dict[UnitTypeId, Set[AbilityId]] = {
         AbilityId.ATTACK_ATTACK,
         AbilityId.BURROWDOWN_ZERGLING,
         AbilityId.HOLDPOSITION_HOLD,
-        AbilityId.MORPHTOBANELING_BANELING,
+        AbilityId.MORPHZERGLINGTOBANELING_BANELING,
         AbilityId.MOVE_MOVE,
         AbilityId.PATROL_PATROL,
         AbilityId.SMART,

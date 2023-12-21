@@ -2,21 +2,18 @@
 from __future__ import annotations
 
 from bisect import bisect_left
-from contextlib import suppress
-from dataclasses import dataclass
 from functools import lru_cache
 from typing import Dict, List, Optional, Union
 
 from sc2.data import Attribute, Race
+from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit_command import UnitCommand
 
-with suppress(ImportError):
-    from sc2.dicts.unit_trained_from import UNIT_TRAINED_FROM
-
 # Set of parts of names of abilities that have no cost
 # E.g every ability that has 'Hold' in its name is free
+# TODO move to constants, add more?
 FREE_ABILITIES = {"Lower", "Raise", "Land", "Lift", "Hold", "Harvest"}
 
 
@@ -68,9 +65,6 @@ class GameData:
                     return Cost(
                         unit.cost.minerals * 2, unit.cost.vespene * 2, unit.cost.time
                     )
-                if unit.id == UnitTypeId.BANELING:
-                    # HARD CODED: banelings don't cost 50/25 as described in the API, but 25/25
-                    return Cost(25, 25, unit.cost.time)
                 # Correction for morphing units, e.g. orbital would return 550/0 instead of actual 150/0
                 morph_cost = unit.morph_cost
                 if morph_cost:  # can be None
@@ -137,7 +131,9 @@ class AbilityData:
 
     @property
     def is_free_morph(self) -> bool:
-        return any(free in self._proto.link_name for free in FREE_ABILITIES)
+        if any(free in self._proto.link_name for free in FREE_ABILITIES):
+            return True
+        return False
 
     @property
     def cost(self) -> Cost:
@@ -339,16 +335,21 @@ class UpgradeData:
         )
 
 
-@dataclass
 class Cost:
     """
     The cost of an action, a structure, a unit or a research upgrade.
     The time is given in frames (22.4 frames per game second).
     """
 
-    minerals: int
-    vespene: int
-    time: Optional[float] = None
+    def __init__(self, minerals: int, vespene: int, time: float = None):
+        """
+        :param minerals:
+        :param vespene:
+        :param time:
+        """
+        self.minerals = minerals
+        self.vespene = vespene
+        self.time = time
 
     def __repr__(self) -> str:
         return f"Cost({self.minerals}, {self.vespene})"
@@ -367,19 +368,34 @@ class Cost:
             return self
         if not self:
             return other
-        time = (self.time or 0) + (other.time or 0)
-        return Cost(
+        if self.time is None:
+            time = other.time
+        elif other.time is None:
+            time = self.time
+        else:
+            time = self.time + other.time
+        return self.__class__(
             self.minerals + other.minerals, self.vespene + other.vespene, time=time
         )
 
-    def __sub__(self, other: Cost) -> Cost:
-        time = (self.time or 0) + (other.time or 0)
-        return Cost(
+    def __sub__(self, other) -> Cost:
+        assert isinstance(other, Cost)
+        if self.time is None:
+            time = other.time
+        elif other.time is None:
+            time = self.time
+        else:
+            time = self.time - other.time
+        return self.__class__(
             self.minerals - other.minerals, self.vespene - other.vespene, time=time
         )
 
     def __mul__(self, other: int) -> Cost:
-        return Cost(self.minerals * other, self.vespene * other, time=self.time)
+        return self.__class__(
+            self.minerals * other, self.vespene * other, time=self.time
+        )
 
     def __rmul__(self, other: int) -> Cost:
-        return Cost(self.minerals * other, self.vespene * other, time=self.time)
+        return self.__class__(
+            self.minerals * other, self.vespene * other, time=self.time
+        )

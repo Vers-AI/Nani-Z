@@ -1,37 +1,37 @@
 from __future__ import annotations
-
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
 
-from loguru import logger
 from s2clientprotocol import debug_pb2 as debug_pb
 from s2clientprotocol import query_pb2 as query_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import sc2api_pb2 as sc_pb
-from s2clientprotocol import spatial_pb2 as spatial_pb
+from s2clientprotocol import common_pb2 as common_pb
 
-from sc2.action import combine_actions
-from sc2.data import ActionResult, ChatChannel, Race, Result, Status
-from sc2.game_data import AbilityData, GameData
-from sc2.game_info import GameInfo
-from sc2.ids.ability_id import AbilityId
-from sc2.ids.unit_typeid import UnitTypeId
-from sc2.position import Point2, Point3
-from sc2.protocol import ConnectionAlreadyClosed, Protocol, ProtocolError
-from sc2.renderer import Renderer
-from sc2.unit import Unit
-from sc2.units import Units
+from s2clientprotocol import ui_pb2 as ui_pb  # for unload_unit()
+
+from .action import combine_actions
+from .data import ActionResult, ChatChannel, Race, Result, Status
+from .game_data import AbilityData, GameData
+from .game_info import GameInfo
+from .ids.ability_id import AbilityId
+from .ids.unit_typeid import UnitTypeId
+from .position import Point2, Point3
+from .protocol import Protocol, ProtocolError
+from .renderer import Renderer
+from .unit import Unit
+from .units import Units
+
+from loguru import logger
 
 
-# pylint: disable=R0904
 class Client(Protocol):
-    def __init__(self, ws, save_replay_path: str = None):
+    def __init__(self, ws):
         """
         :param ws:
         """
         super().__init__(ws)
         # How many frames will be waited between iterations before the next one is called
-        self.game_step: int = 4
-        self.save_replay_path: Optional[str] = save_replay_path
+        self.game_step: int = 8
         self._player_id = None
         self._game_result = None
         # Store a hash value of all the debug requests to prevent sending the same ones again if they haven't changed last frame
@@ -43,10 +43,14 @@ class Client(Protocol):
         self._debug_spheres = []
 
         self._renderer = None
-        self.raw_affects_selection = False
+        # self.raw_affects_selection = False
+        # self.enable_feature_layer = False
+
+        self.raw_affects_selection = True
+        self.enable_feature_layer = True
 
     @property
-    def in_game(self) -> bool:
+    def in_game(self):
         return self._status in {Status.in_game, Status.in_replay}
 
     async def join_game(
@@ -57,6 +61,12 @@ class Client(Protocol):
         portconfig=None,
         rgb_render_config=None,
     ):
+        feature_layer = None
+        if self.enable_feature_layer:
+            feature_layer = sc_pb.SpatialCameraSetup(
+                resolution=common_pb.Size2DI(x=1, y=1),
+                minimap_resolution=common_pb.Size2DI(x=1, y=1),
+            )
         ifopts = sc_pb.InterfaceOptions(
             raw=True,
             score=True,
@@ -65,6 +75,7 @@ class Client(Protocol):
             raw_affects_selection=self.raw_affects_selection,
             raw_crop_to_playable_area=False,
             show_placeholders=True,
+            feature_layer=feature_layer,
         )
 
         if rgb_render_config:
@@ -115,7 +126,7 @@ class Client(Protocol):
         return result.join_game.player_id
 
     async def leave(self):
-        """You can use 'await self.client.leave()' to surrender midst game."""
+        """You can use 'await self._client.leave()' to surrender midst game."""
         is_resign = self._game_result is None
 
         if is_resign:
@@ -124,22 +135,70 @@ class Client(Protocol):
             self._game_result = {self._player_id: Result.Defeat}
 
         try:
-            if self.save_replay_path is not None:
-                await self.save_replay(self.save_replay_path)
-                self.save_replay_path = None
             await self._execute(leave_game=sc_pb.RequestLeaveGame())
-        except (ProtocolError, ConnectionAlreadyClosed):
+        except ProtocolError:
             if is_resign:
                 raise
 
+    async def unload_unit(self, transporter_unit: Unit, cargo_unit: Unit = False):
+        """
+        unload single unit passed by cargo_unit or first unit in transporter if not cargo_unit passed
+        transporter_unit includes all units, which can unload cargo:
+        warpprism, medivac, bunker, command center, command center flying, planetary fortress, droppenlord, nydlus
+
+        Usage:
+        self.client.unload_unit(transporter_unit, cargo_unit)
+        self.client.unload_unit(transporter_unit) # unloads first one
+
+        """
+        assert isinstance(transporter_unit, Unit)
+        assert isinstance(cargo_unit, (bool, Unit))
+
+        if not transporter_unit.passengers:
+            return
+
+        if isinstance(cargo_unit, bool):
+            unload_unit_index = 0
+        if isinstance(cargo_unit, Unit):
+            unload_unit_index = next(
+                (
+                    index
+                    for index, unit in enumerate(transporter_unit._proto.passengers)
+                    if unit.tag == cargo_unit.tag
+                ),
+                0,
+            )
+
+        # await self.client._execute( # if in main bot file
+        await self._execute(
+            action=sc_pb.RequestAction(
+                actions=[
+                    sc_pb.Action(
+                        action_raw=raw_pb.ActionRaw(
+                            unit_command=raw_pb.ActionRawUnitCommand(
+                                ability_id=0, unit_tags=[transporter_unit.tag]
+                            )  # list of tags
+                        )
+                    ),
+                    sc_pb.Action(
+                        action_ui=ui_pb.ActionUI(
+                            cargo_panel=ui_pb.ActionCargoPanelUnload(
+                                unit_index=unload_unit_index
+                            )  # index in cargo
+                        )
+                    ),
+                ]
+            )
+        )
+
     async def save_replay(self, path):
-        logger.debug("Requesting replay from server")
+        logger.debug(f"Requesting replay from server")
         result = await self._execute(save_replay=sc_pb.RequestSaveReplay())
         with open(path, "wb") as f:
             f.write(result.save_replay.data)
         logger.info(f"Saved replay to {path}")
 
-    async def observation(self, game_loop: int = None):
+    async def observation(self, game_loop=None):
         if game_loop is not None:
             result = await self._execute(
                 observation=sc_pb.RequestObservation(game_loop=game_loop)
@@ -216,7 +275,7 @@ class Client(Protocol):
     async def actions(self, actions, return_successes=False):
         if not actions:
             return None
-        if not isinstance(actions, list):
+        elif not isinstance(actions, list):
             actions = [actions]
 
         # On realtime=True, might get an error here: sc2.protocol.ProtocolError: ['Not in a game']
@@ -228,18 +287,21 @@ class Client(Protocol):
                     )
                 )
             )
-        except ProtocolError:
+        except ProtocolError as e:
             return []
         if return_successes:
             return [ActionResult(r) for r in res.action.result]
-        return [
-            ActionResult(r)
-            for r in res.action.result
-            if ActionResult(r) != ActionResult.Success
-        ]
+        else:
+            return [
+                ActionResult(r)
+                for r in res.action.result
+                if ActionResult(r) != ActionResult.Success
+            ]
 
     async def query_pathing(
-        self, start: Union[Unit, Point2, Point3], end: Union[Point2, Point3]
+        self,
+        start: Union[Unit, Point2, Point3],
+        end: Union[Point2, Point3],
     ) -> Optional[Union[int, float]]:
         """Caution: returns "None" when path not found
         Try to combine queries with the function below because the pathing query is generally slow.
@@ -266,7 +328,7 @@ class Client(Protocol):
 
     async def query_pathings(
         self, zipped_list: List[List[Union[Unit, Point2, Point3]]]
-    ) -> List[float]:
+    ) -> List[Union[float, int]]:
         """Usage: await self.query_pathings([[unit1, target2], [unit2, target2]])
         -> returns [distance1, distance2]
         Caution: returns 0 when path not found
@@ -545,6 +607,8 @@ class Client(Protocol):
         """Moves camera to the target position using the spatial aciton interface
 
         :param position:"""
+        from s2clientprotocol import spatial_pb2 as spatial_pb
+
         assert isinstance(position, (Point2, Point3))
         action = sc_pb.Action(
             action_render=spatial_pb.ActionSpatial(
@@ -724,42 +788,33 @@ class Client(Protocol):
             if debug_hash != self._debug_hash_tuple_last_iteration:
                 # Something has changed, either more or less is to be drawn, or a position of a drawing changed (e.g. when drawing on a moving unit)
                 self._debug_hash_tuple_last_iteration = debug_hash
-                try:
-                    await self._execute(
-                        debug=sc_pb.RequestDebug(
-                            debug=[
-                                debug_pb.DebugCommand(
-                                    draw=debug_pb.DebugDraw(
-                                        text=[
-                                            text.to_proto()
-                                            for text in self._debug_texts
-                                        ]
-                                        if self._debug_texts
-                                        else None,
-                                        lines=[
-                                            line.to_proto()
-                                            for line in self._debug_lines
-                                        ]
-                                        if self._debug_lines
-                                        else None,
-                                        boxes=[
-                                            box.to_proto() for box in self._debug_boxes
-                                        ]
-                                        if self._debug_boxes
-                                        else None,
-                                        spheres=[
-                                            sphere.to_proto()
-                                            for sphere in self._debug_spheres
-                                        ]
-                                        if self._debug_spheres
-                                        else None,
-                                    )
+                await self._execute(
+                    debug=sc_pb.RequestDebug(
+                        debug=[
+                            debug_pb.DebugCommand(
+                                draw=debug_pb.DebugDraw(
+                                    text=[text.to_proto() for text in self._debug_texts]
+                                    if self._debug_texts
+                                    else None,
+                                    lines=[
+                                        line.to_proto() for line in self._debug_lines
+                                    ]
+                                    if self._debug_lines
+                                    else None,
+                                    boxes=[box.to_proto() for box in self._debug_boxes]
+                                    if self._debug_boxes
+                                    else None,
+                                    spheres=[
+                                        sphere.to_proto()
+                                        for sphere in self._debug_spheres
+                                    ]
+                                    if self._debug_spheres
+                                    else None,
                                 )
-                            ]
-                        )
+                            )
+                        ]
                     )
-                except ProtocolError:
-                    return
+                )
             self._debug_draw_last_frame = True
             self._debug_texts.clear()
             self._debug_lines.clear()
@@ -936,22 +991,23 @@ class DrawItem:
         if color is None:
             return debug_pb.Color(r=255, g=255, b=255)
         # Need to check if not of type Point3 because Point3 inherits from tuple
-        if (
+        elif (
             isinstance(color, (tuple, list))
             and not isinstance(color, Point3)
             and len(color) == 3
         ):
             return debug_pb.Color(r=color[0], g=color[1], b=color[2])
         # In case color is of type Point3
-        r = getattr(color, "r", getattr(color, "x", 255))
-        g = getattr(color, "g", getattr(color, "y", 255))
-        b = getattr(color, "b", getattr(color, "z", 255))
-        if max(r, g, b) <= 1:
-            r *= 255
-            g *= 255
-            b *= 255
+        else:
+            r = getattr(color, "r", getattr(color, "x", 255))
+            g = getattr(color, "g", getattr(color, "y", 255))
+            b = getattr(color, "b", getattr(color, "z", 255))
+            if max(r, g, b) <= 1:
+                r *= 255
+                g *= 255
+                b *= 255
 
-        return debug_pb.Color(r=int(r), g=int(g), b=int(b))
+            return debug_pb.Color(r=int(r), g=int(g), b=int(b))
 
 
 class DrawItemScreenText(DrawItem):
