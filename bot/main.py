@@ -56,7 +56,7 @@ class MyBot(AresBot):
     ):
         print(f"Executing do_zergling_engagement with {len(zerglings)} zerglings")
         # map center as teh default A-move target
-        target = self.game_info.map_center
+        attack_target = self.game_info.map_center
 
         """Engage enemy units with zerglings and use stutter step behavior.
 
@@ -79,8 +79,8 @@ class MyBot(AresBot):
                 if closest_enemy:
                     zergling_maneuver.add(StutterUnitBack(zergling, closest_enemy))
                     
-                    zergling_maneuver.add(AMove(zergling, target))
-                    self.register_behavior(zergling_maneuver)
+            zergling_maneuver.add(AMove(zergling, attack_target))
+            self.register_behavior(zergling_maneuver)
 
     def do_roach_pylon_attack(
         self,
