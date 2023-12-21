@@ -1,8 +1,8 @@
 from typing import Optional
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
-from ares.cython_extensions.combat_utils import cy_pick_enemy_target
 from ares.cython_extensions.units_utils import cy_closest_to
+from ares.cython_extensions.geometry import cy_distance_to
 from ares.behaviors.combat.individual import (
     AMove,
     PathUnitToTarget,
@@ -101,17 +101,17 @@ class MyBot(AresBot):
 
         for roach in roaches:
             roach_maneuver = CombatManeuver()
-            # Path to the enemy start location
-            roach_maneuver.add(
-                PathUnitToTarget(
-                    roach, grid, enemy_start_location, success_at_distance=5.0
-                )
-            )
-
-            # If a pylon is found, attack it
-            if enemy_pylon:
+            # If a pylon is found and within 15 distance units, attack it
+            if enemy_pylon and cy_distance_to(roach.position, enemy_pylon.position) < 15.0:
                 roach_maneuver.add(AttackTarget(roach, enemy_pylon))
-
+            else:
+                # Path to the enemy start location
+                roach_maneuver.add(
+                    PathUnitToTarget(
+                        roach, grid, enemy_start_location, success_at_distance=5.0
+                    )
+                )
+            
             self.register_behavior(roach_maneuver)
 
     def _close_enemy_pylon(self) -> Unit:
