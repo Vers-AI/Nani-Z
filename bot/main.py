@@ -12,7 +12,6 @@ from ares.behaviors.combat.individual import (
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
-from sc2.position import Point2
 
 import numpy as np
 
@@ -25,7 +24,6 @@ class MyBot(AresBot):
 
     async def on_step(self, iteration: int):
         await super(MyBot, self).on_step(iteration)
-        print(f"Game Loop Iteration: {iteration}")
         # retrieves zergling and roaches
         zerglings = self.units(UnitTypeId.ZERGLING)
         roaches = self.units(UnitTypeId.ROACH)
@@ -39,7 +37,6 @@ class MyBot(AresBot):
         self.do_roach_engagement(roaches, enemy_units, ground_grid)
 
     def do_zergling_pylon_attack(self, zerglings: Units, grid: np.ndarray):
-        print(f"Executing do_zergling_pylon_attack with {len(zerglings)} zerglings")
         enemy_pylon = self._close_enemy_pylon()
         enemy_start_location = self.enemy_start_locations[0]
 
@@ -52,7 +49,6 @@ class MyBot(AresBot):
             self.register_behavior(zergling_maneuver)
 
     def do_roach_engagement(self, roaches: Units, enemies: Units, grid: np.ndarray):
-        print(f"Executing do_roach_engagement with {len(roaches)} roaches")
         for roach in roaches:
             roach_maneuver = CombatManeuver()
             if enemies:
