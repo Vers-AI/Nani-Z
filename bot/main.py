@@ -1,4 +1,5 @@
 from typing import Optional
+from ares.consts import UnitRole
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
 from ares.cython_extensions.units_utils import cy_closest_to, cy_distance_to
@@ -21,12 +22,20 @@ class MyBot(AresBot):
     def __init__(self, game_step_override: Optional[int] = None):
         
         super().__init__(game_step_override)
+        
+        #add attribute to remember assigning zergling harass
+        self._assigned_ling_harass: bool = False
 
     async def on_step(self, iteration: int):
         await super(MyBot, self).on_step(iteration)
         # retrieves zergling and roaches
         zerglings = self.units(UnitTypeId.ZERGLING)
         roaches = self.units(UnitTypeId.ROACH)
+
+        #defines the role of the units
+        zergling_roach_force = Units = self.mediator.get_units_from_role(role=UnitRole.ATTACKING)
+        zergling_harass_force = Units = self.mediator.get_units_from_role(role=UnitRole.HARASSING)
+
 
         # define targets and grid
         enemy_units = self.enemy_units
@@ -43,7 +52,7 @@ class MyBot(AresBot):
         for zergling in zerglings:
             zergling_maneuver = CombatManeuver()
             if enemy_pylon and cy_distance_to(zergling.position, enemy_pylon.position) < 15.0:
-                zergling_maneuver.add(AMove(zergling, enemy_start_location))
+                zergling_maneuver.add(AttackTarget(zergling, enemy_pylon))
             else:
                 zergling_maneuver.add(PathUnitToTarget(zergling, grid, enemy_start_location, success_at_distance=5.0))
             self.register_behavior(zergling_maneuver)
