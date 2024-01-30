@@ -13,62 +13,82 @@ from ares.behaviors.combat.individual import (
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
+from sc2.position import Point2
 
 import numpy as np
 
 class MyBot(AresBot):
     combat_manager = None
+    ZERG_UNIT_TYPE: set[UnitTypeId] = { UnitTypeId.ZERGLING, UnitTypeId.ROACH }
+
 
     def __init__(self, game_step_override: Optional[int] = None):
         
         super().__init__(game_step_override)
         
         #add attribute to remember assigning zergling harass
-        self._assigned_ling_harass: bool = False
+        self._assigned_harass_force: bool = False
 
     async def on_step(self, iteration: int):
         await super(MyBot, self).on_step(iteration)
-        # retrieves zergling and roaches
-        zerglings = self.units(UnitTypeId.ZERGLING)
-        roaches = self.units(UnitTypeId.ROACH)
-
-        #defines the role of the units
-        zergling_roach_force = Units = self.mediator.get_units_from_role(role=UnitRole.ATTACKING)
-        zergling_harass_force = Units = self.mediator.get_units_from_role(role=UnitRole.HARASSING)
-
 
         # define targets and grid
         enemy_units = self.enemy_units
         ground_grid = self.mediator.get_ground_grid
 
-        # call the pylon attack for zergling and engagement for roaches
-        self.do_zergling_pylon_attack(zerglings, ground_grid)
-        self.do_roach_engagement(roaches, enemy_units, ground_grid)
+        #retrieve units based on the role of the unit
+        main_attack_force = Units = self.mediator.get_units_from_role(role=UnitRole.ATTACKING)
+        zergling_roach_harass_force = Units = self.mediator.get_units_from_role(role=UnitRole.HARASSING)
 
-    def do_zergling_pylon_attack(self, zerglings: Units, grid: np.ndarray):
-        enemy_pylon = self._close_enemy_pylon()
-        enemy_start_location = self.enemy_start_locations[0]
+        #if we have a zergling attack force, assign it to harass
+        if main_attack_force:
+            if not self._assigned_harass_force:
+                self._assign_harass_force(main_attack_force)
+                self._assigned_harass_force = True
 
-        for zergling in zerglings:
-            zergling_maneuver = CombatManeuver()
-            if enemy_pylon and cy_distance_to(zergling.position, enemy_pylon.position) < 15.0:
-                zergling_maneuver.add(AttackTarget(zergling, enemy_pylon))
-            else:
-                zergling_maneuver.add(PathUnitToTarget(zergling, grid, enemy_start_location, success_at_distance=5.0))
-            self.register_behavior(zergling_maneuver)
+            attack_target =  self.enemy_start_locations[0]
+            self._main_army_attack(main_attack_force, attack_target)
+                
+        if zergling_roach_harass_force:
+            self._micro_army_harassers(zergling_roach_harass_force, enemy_units, ground_grid)  
 
-    def do_roach_engagement(self, roaches: Units, enemies: Units, grid: np.ndarray):
+    
+    async def on_unit_created(self, unit: Unit) -> None:
+        await super(MyBot, self).on_unit_created(unit)
+
+        # assign all units to ATTACKING role by default
+        if unit.type_id in self.ZERG_UNIT_TYPE:
+            self.mediator.assign_role(
+                tag=unit.tag, role=UnitRole.ATTACKING
+            )
+    # assign the zergling attack force to the harass role
+    def _assign_harass_force(self, main_attack_force: Units) -> None:
+         # get all roaches from our force
+        roaches: list[Unit] = [u for u in main_attack_force if u.type_id == UnitTypeId.ROACH]
+
+        # iterate through all roaches and assign them to the harass role
         for roach in roaches:
-            roach_maneuver = CombatManeuver()
-            if enemies:
-                closest_enemy: Unit = cy_closest_to(roach.position, enemies)
-                roach_maneuver.add(StutterUnitBack(roach, closest_enemy))
-            else:
-                roach_maneuver.add(AMove(roach, self.game_info.map_center))
-            self.register_behavior(roach_maneuver)
+            self.mediator.assign_role(tag=roach.tag, role=UnitRole.HARASSING)
+        # get all zerglings from our force
+        zerglings: list[Unit] = [u for u in main_attack_force if u.type_id == UnitTypeId.ZERGLING]
+        # iterate through zerglings
+        for i, zergling in enumerate(zerglings):
+            # if the zergling is even, assign it to the harass role
+            if i % 2 == 0:
+                self.mediator.assign_role(tag=zergling.tag, role=UnitRole.HARASSING)
 
-    def _close_enemy_pylon(self) -> Unit:
-        pylons = self.enemy_structures(UnitTypeId.PYLON)
-        if pylons:
-            return pylons.closest_to(self.game_info.map_center)
-        return None
+    def _main_army_attack(self, main_attack_force: Units, attack_target: Point2) -> None:
+        for unit in main_attack_force:
+            unit.attack(attack_target)
+
+    def _micro_army_harassers(self, zergling_roach_harass_force: Units, enemy_units: Units, ground_grid: np.ndarray) -> None:
+        for unit in zergling_roach_harass_force:
+            # attack the enemy start location unless near an enemy then stutter step back using combat maneuver
+            harrass_maneuvers = CombatManeuver()
+            if enemy_units:
+                closet_enemy: Unit = cy_closest_to(unit.position, enemy_units)
+                harrass_maneuvers.add(StutterUnitBack(unit, closet_enemy))
+            else:
+                harrass_maneuvers.add(AMove(unit, self.enemy_start_locations[0]))
+            self.register_behavior(harrass_maneuvers)
+            
