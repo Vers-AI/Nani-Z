@@ -53,6 +53,7 @@ class MyBot(AresBot):
             self._micro_army_harassers(zergling_roach_harass_force, enemy_units, ground_grid)  
 
     
+    
     async def on_unit_created(self, unit: Unit) -> None:
         await super(MyBot, self).on_unit_created(unit)
 
@@ -77,9 +78,21 @@ class MyBot(AresBot):
             if i % 2 == 0:
                 self.mediator.assign_role(tag=zergling.tag, role=UnitRole.HARASSING)
 
-    def _main_army_attack(self, main_attack_force: Units, attack_target: Point2) -> None:
-        for unit in main_attack_force:
-            unit.attack(attack_target)
+    
+    
+    def _main_army_attack(self, main_attack_force: Unit, attack_target: Point2) -> None:
+        enemy_pylon = self._close_enemy_pylon()
+        enemy_start_location = self.enemy_start_locations[0]
+        
+        for Unit in main_attack_force:
+            main_maneuver = CombatManeuver()
+            # avoid the enemy units to attack the pylons
+            if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 15.0:
+                main_maneuver.add(AttackTarget(Unit, enemy_pylon))
+            else:
+                main_maneuver.add(PathUnitToTarget(Unit, Point2, enemy_start_location, success_at_distance=5.0))
+            self.register_behavior(main_maneuver)
+            
 
     def _micro_army_harassers(self, zergling_roach_harass_force: Units, enemy_units: Units, ground_grid: np.ndarray) -> None:
         for unit in zergling_roach_harass_force:
@@ -92,3 +105,8 @@ class MyBot(AresBot):
                 harrass_maneuvers.add(AMove(unit, self.enemy_start_locations[0]))
             self.register_behavior(harrass_maneuvers)
             
+    def _close_enemy_pylon(self) -> Unit:
+        pylons = self.enemy_structures(UnitTypeId.PYLON)
+        if pylons:
+            return pylons.closest_to(self.game_info.map_center)
+        return None
