@@ -47,7 +47,7 @@ class MyBot(AresBot):
                 self._assigned_harass_force = True
 
             attack_target =  self.enemy_start_locations[0]
-            self._main_army_attack(main_attack_force, attack_target)
+            self._main_army_attack(main_attack_force, attack_target, ground_grid)
                 
         if zergling_roach_harass_force:
             self._micro_army_harassers(zergling_roach_harass_force, enemy_units, ground_grid)  
@@ -80,17 +80,17 @@ class MyBot(AresBot):
 
     
     
-    def _main_army_attack(self, main_attack_force: Unit, attack_target: Point2) -> None:
+    def _main_army_attack(self, main_attack_force: Unit, attack_target: Point2, ground_grid: np.ndarray) -> None:
         enemy_pylon = self._close_enemy_pylon()
         enemy_start_location = self.enemy_start_locations[0]
-        
+
         for Unit in main_attack_force:
             main_maneuver = CombatManeuver()
             # avoid the enemy units to attack the pylons
             if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 15.0:
                 main_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
-                main_maneuver.add(PathUnitToTarget(Unit, Point2, enemy_start_location, success_at_distance=5.0))
+                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=5.0))
             self.register_behavior(main_maneuver)
             
 
