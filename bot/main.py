@@ -84,17 +84,16 @@ class MyBot(AresBot):
         # iterate through zerglings
         for i, zergling in enumerate(zerglings):
             # if the zergling is even, assign it to the harass role
-            if i % 2 == 0:
+            if i < 11:
                 self.mediator.assign_role(tag=zergling.tag, role=UnitRole.HARASSING)
 
     def _assign_b_army_force(self, main_attack_force: Units) -> None:
         # gets 50% of the remaining zerglings and assign them to the attacking role
         zerglings: list[Unit] = [u for u in main_attack_force if u.type_id == UnitTypeId.ZERGLING]
-        half = len(zerglings) // 2  # Use integer division to get the half point
         for i, zergling in enumerate(zerglings):
-            if i < half:
+            if i < 5:
                 self.mediator.assign_role(tag=zergling.tag, role=UnitRole.ATTACKING)
-                print("zergling assigned to attacking role")
+                
         
     
     def _main_army_attack(self, main_attack_force: Unit, attack_target: Point2, ground_grid: np.ndarray) -> None:
@@ -123,7 +122,6 @@ class MyBot(AresBot):
             else:
                 b_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=10.0))
                 b_maneuver.add(AttackTarget(Unit, enemy_pylon))
-                print("b force attacking")
             self.register_behavior(b_maneuver)
 
     def _micro_army_harassers(self, zergling_roach_harass_force: Units, enemy_units: Units, ground_grid: np.ndarray) -> None:
