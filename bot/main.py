@@ -2,7 +2,7 @@ from typing import Optional
 from ares.consts import UnitRole
 from ares import AresBot
 from ares.behaviors.combat import CombatManeuver
-from ares.cython_extensions.units_utils import cy_closest_to, cy_distance_to
+from cython_extensions import cy_closest_to, cy_distance_to
 from ares.behaviors.combat.individual import (
     AMove,
     PathUnitToTarget,
