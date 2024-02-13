@@ -8,10 +8,8 @@ from ares.behaviors.combat.individual import (
     PathUnitToTarget,
     StutterUnitBack,
     AttackTarget,
-    WorkerKiteBack,
-    KeepUnitSafe
 )
-
+from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.unit import Unit
 from sc2.units import Units
@@ -37,6 +35,7 @@ class MyBot(AresBot):
         # define targets and grid
         enemy_units = self.enemy_units
         ground_grid = self.mediator.get_ground_grid
+        attack_target = None
 
         #retrieve units based on the role of the unit
         main_attack_force = Units = self.mediator.get_units_from_role(role=UnitRole.ATTACKING_MAIN_SQUAD)
@@ -54,6 +53,7 @@ class MyBot(AresBot):
             self._main_army_attack(main_attack_force, attack_target, ground_grid)
                 
         if b_attack_force:
+            attack_target =  self.enemy_start_locations[0]
             self._b_army_attack(b_attack_force, attack_target, ground_grid)
 
         if zergling_roach_harass_force:
@@ -106,6 +106,7 @@ class MyBot(AresBot):
                 main_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=4.0))
                 main_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
+                
                 main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=15.0))
                 main_maneuver.add(AttackTarget(Unit, enemy_pylon))
             self.register_behavior(main_maneuver)
@@ -128,11 +129,17 @@ class MyBot(AresBot):
         for unit in zergling_roach_harass_force:
             # attack the enemy start location unless near an enemy then stutter step back using combat maneuver
             harrass_maneuvers = CombatManeuver()
-            if enemy_units:
+            if self.time < 12:
+                unit(AbilityId.HOLDPOSITION, queue=False)
+            elif enemy_units:
                 closet_enemy: Unit = cy_closest_to(unit.position, enemy_units)
                 harrass_maneuvers.add(StutterUnitBack(unit, closet_enemy))
-            else:
-                harrass_maneuvers.add(AMove(unit, self.enemy_start_locations[0]))
+                # Check if low health and retreat (not working yet)
+                ## if unit.health_percentage < 0.5:
+                  ##  harrass_maneuvers.add(KeepUnitSafe(unit, self.start_location))
+            else:    
+                harrass_maneuvers.add(AMove(unit, self.game_info.map_center))
+                
             self.register_behavior(harrass_maneuvers)
             
     def _close_enemy_pylon(self) -> Unit:
