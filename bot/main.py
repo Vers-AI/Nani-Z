@@ -8,6 +8,7 @@ from ares.behaviors.combat.individual import (
     PathUnitToTarget,
     StutterUnitBack,
     AttackTarget,
+    KeepUnitSafe,
 )
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
@@ -132,11 +133,8 @@ class MyBot(AresBot):
             if self.time < 12:
                 unit(AbilityId.HOLDPOSITION, queue=False)
             elif enemy_units:
-                closet_enemy: Unit = cy_closest_to(unit.position, enemy_units)
-                harrass_maneuvers.add(StutterUnitBack(unit, closet_enemy))
-                # Check if low health and retreat (not working yet)
-                ## if unit.health_percentage < 0.5:
-                  ##  harrass_maneuvers.add(KeepUnitSafe(unit, self.start_location))
+                closest_enemy: Unit = cy_closest_to(unit.position, enemy_units)
+                harrass_maneuvers.add(StutterUnitBack(unit, closest_enemy, kite_via_pathing=True))
             else:    
                 harrass_maneuvers.add(AMove(unit, self.game_info.map_center))
                 
