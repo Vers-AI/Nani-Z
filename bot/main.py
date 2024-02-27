@@ -107,8 +107,7 @@ class MyBot(AresBot):
                 main_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=4.0))
                 main_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
-                
-                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=15.0))
+                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=15.0, danger_distance=25.0, danger_threshold=0.6))
                 main_maneuver.add(AttackTarget(Unit, enemy_pylon))
             self.register_behavior(main_maneuver)
             
@@ -122,7 +121,7 @@ class MyBot(AresBot):
                 b_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=4.0))
                 b_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
-                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=10.0))
+                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=10.0, danger_distance=25.0, danger_threshold=0.6))
                 b_maneuver.add(AttackTarget(Unit, enemy_pylon))
             self.register_behavior(b_maneuver)
 
@@ -132,10 +131,16 @@ class MyBot(AresBot):
             harrass_maneuvers = CombatManeuver()
             if self.time < 12:
                 unit(AbilityId.HOLDPOSITION, queue=False)
-            elif enemy_units:
+            #check if hp is less than 50% and retreat
+            elif unit.health_percentage < 0.5:
+                harrass_maneuvers.add(KeepUnitSafe(unit=unit, grid=ground_grid))
+            elif enemy_units and unit.type_id == UnitTypeId.ROACH:
                 closest_enemy: Unit = cy_closest_to(unit.position, enemy_units)
                 harrass_maneuvers.add(StutterUnitBack(unit, closest_enemy, kite_via_pathing=True))
-            else:    
+            elif enemy_units and unit.type_id == UnitTypeId.ZERGLING:
+                closest_enemy: Unit = cy_closest_to(unit.position, enemy_units)
+                harrass_maneuvers.add(AMove(unit, closest_enemy.position)) 
+            else: 
                 harrass_maneuvers.add(AMove(unit, self.game_info.map_center))
                 
             self.register_behavior(harrass_maneuvers)
