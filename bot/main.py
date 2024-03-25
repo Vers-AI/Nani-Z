@@ -96,7 +96,10 @@ class MyBot(AresBot):
                 self.mediator.assign_role(tag=zergling.tag, role=UnitRole.ATTACKING)
                 
         
-    
+    ## Objective Squad
+                
+    ### A Squad - Left Side of Pylon
+                
     def _main_army_attack(self, main_attack_force: Unit, attack_target: Point2, ground_grid: np.ndarray) -> None:
         enemy_pylon = self._close_enemy_pylon()
 
@@ -108,22 +111,27 @@ class MyBot(AresBot):
                 main_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=4.0))
                 main_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
-                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=15.0, danger_distance=25.0, danger_threshold=0.6))
+                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=15.0, danger_distance=25.0, danger_threshold=6.0))
             self.register_behavior(main_maneuver)
             
+    
+    ### B Squad - Right Side of Pylon
     def _b_army_attack(self, b_attack_force: Units, attack_target: Point2, ground_grid: np.ndarray) -> None:
         enemy_pylon = self._close_enemy_pylon()
 
         for Unit in b_attack_force:
             b_maneuver = CombatManeuver()
             # avoid the enemy units to attack the pylons
-            if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 3.0:
-                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=4.0))
+            if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 10.0:
+                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position.to2.offset((2,0)), success_at_distance=3.0, danger_threshold=2.0))
                 b_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
-                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=10.0, danger_distance=25.0, danger_threshold=0.6))
+                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=10.0, danger_distance=30.0, danger_threshold=6.0))
             self.register_behavior(b_maneuver)
 
+    
+    ## Distractions
+            
     def _micro_army_harassers(self, zergling_roach_harass_force: Units, enemy_units: Units, ground_grid: np.ndarray) -> None:
         for unit in zergling_roach_harass_force:
             # attack the enemy start location unless near an enemy then stutter step back using combat maneuver
