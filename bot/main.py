@@ -21,6 +21,7 @@ import numpy as np
 class MyBot(AresBot):
     combat_manager = None
     ZERG_UNIT_TYPE: set[UnitTypeId] = { UnitTypeId.ZERGLING, UnitTypeId.ROACH }
+    
 
 
     def __init__(self, game_step_override: Optional[int] = None):
@@ -29,10 +30,19 @@ class MyBot(AresBot):
         
         #add attribute to remember assigning zergling harass
         self._assigned_force: bool = False
+        
+        
+    async def on_start(self):
+        
+        await super().on_start()
+        print("Game started")
+        self.pylon_location_set = False
+
 
     async def on_step(self, iteration: int):
-        await super(MyBot, self).on_step(iteration)
 
+        await super(MyBot, self).on_step(iteration)
+        
         # define targets and grid
         enemy_units = self.enemy_units
         ground_grid = self.mediator.get_ground_grid
@@ -43,6 +53,17 @@ class MyBot(AresBot):
         b_attack_force = Units = self.mediator.get_units_from_role(role=UnitRole.ATTACKING)
         zergling_roach_harass_force = Units = self.mediator.get_units_from_role(role=UnitRole.HARASSING)
 
+
+        # determining spawn side
+        if self.structures(UnitTypeId.PYLON) and not self.pylon_location_set:
+            self.pylon = self.structures(UnitTypeId.PYLON)
+            self.pylon_location_set = True
+            spawn_side = 'left' if self.pylon[0].position < self.game_info.map_center.position else 'right'
+            self.offset = (2, 0) if spawn_side == 'left' else (-2, 0)
+            print(f"pylon position: {self.pylon[0].position}")
+            print(f"spawn side: {spawn_side}, offset: {self.offset}")
+
+        
         # if we have a main attack force, attack the enemy start location
         if main_attack_force:
             if not self._assigned_force:
@@ -118,12 +139,13 @@ class MyBot(AresBot):
     ### B Squad - Right Side of Pylon
     def _b_army_attack(self, b_attack_force: Units, attack_target: Point2, ground_grid: np.ndarray) -> None:
         enemy_pylon = self._close_enemy_pylon()
+        
 
         for Unit in b_attack_force:
             b_maneuver = CombatManeuver()
             # avoid the enemy units to attack the pylons
             if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 10.0:
-                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position.to2.offset((2,0)), success_at_distance=3.0, danger_threshold=2.0))
+                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position.to2.offset(self.offset), success_at_distance=3.0, danger_threshold=2.0))
                 b_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
                 b_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=10.0, danger_distance=30.0, danger_threshold=6.0))
