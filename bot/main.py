@@ -128,9 +128,13 @@ class MyBot(AresBot):
         for Unit in main_attack_force:
             main_maneuver = CombatManeuver()
             # avoid the enemy units to attack the pylons
-            if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 10.0:
-                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=6.0))
-                main_maneuver.add(AttackTarget(Unit, enemy_pylon))
+            if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 15.0:
+                # attack the pylon if there are less than 3 enemy units nearby
+                if self.enemy_units.closer_than(10.0, enemy_pylon).amount < 5:
+                    main_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=6.0))
+                    main_maneuver.add(AttackTarget(Unit, enemy_pylon))
+                else:
+                    main_maneuver.add(KeepUnitSafe(unit=Unit, grid=ground_grid))
             else:
                 main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=20.0, danger_distance=30.0, danger_threshold=6.0))
             self.register_behavior(main_maneuver)
@@ -144,9 +148,13 @@ class MyBot(AresBot):
         for Unit in b_attack_force:
             b_maneuver = CombatManeuver()
             # avoid the enemy units to attack the pylons
-            if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 10.0:
-                b_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position.to2.offset(self.offset), success_at_distance=3.0, danger_threshold=2.0))
-                b_maneuver.add(AttackTarget(Unit, enemy_pylon))
+            if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 15.0:
+                # attack the pylon if there are less than 3 enemy units nearby
+                if self.enemy_units.closer_than(10.0, enemy_pylon).amount < 5:
+                    b_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position.to2.offset(self.offset), success_at_distance=3.0, danger_threshold=2.0))
+                    b_maneuver.add(AttackTarget(Unit, enemy_pylon))
+                else:
+                    b_maneuver.add(KeepUnitSafe(unit=Unit, grid=ground_grid))
             else:
                 b_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=10.0, danger_distance=30.0, danger_threshold=6.0))
             self.register_behavior(b_maneuver)
