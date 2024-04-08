@@ -121,7 +121,7 @@ class MyBot(AresBot):
                 
     ### A Squad - Left Side of Pylon
                 
-    def _main_army_attack(self, main_attack_force: Unit, attack_target: Point2, ground_grid: np.ndarray) -> None:
+    def _main_army_attack(self, main_attack_force: Units, attack_target: Point2, ground_grid: np.ndarray) -> None:
         enemy_pylon = self._close_enemy_pylon()
 
 
@@ -129,10 +129,10 @@ class MyBot(AresBot):
             main_maneuver = CombatManeuver()
             # avoid the enemy units to attack the pylons
             if enemy_pylon and cy_distance_to(Unit.position, enemy_pylon.position) < 10.0:
-                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=4.0))
+                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, enemy_pylon.position, success_at_distance=6.0))
                 main_maneuver.add(AttackTarget(Unit, enemy_pylon))
             else:
-                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=15.0, danger_distance=25.0, danger_threshold=6.0))
+                main_maneuver.add(PathUnitToTarget(Unit, ground_grid, attack_target, success_at_distance=20.0, danger_distance=30.0, danger_threshold=6.0))
             self.register_behavior(main_maneuver)
             
     
